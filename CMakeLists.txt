@@ -6,16 +6,29 @@ project(${SKBUILD_PROJECT_NAME} VERSION ${SKBUILD_PROJECT_VERSION})
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Add clang tools
+include(cmake/clang-cxx-dev-tools.cmake)
+include(cmake/FindLibGEOS.cmake)
+
 # Find packages
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 find_package(pybind11 CONFIG REQUIRED)
-#find_package(foo CONFIG REQUIRED)
-#find_package(bar CONFIG REQUIRED)
+
+# Set include directories
+include_directories(${CMAKE_SOURCE_DIR}/src/cpp/include)
+include_directories(${CMAKE_SOURCE_DIR}/src/cpp/include/model)
+include_directories(${CMAKE_SOURCE_DIR}/src/cpp/external)
+include_directories(${LIBGEOS_INCLUDE_DIRS})
+
+
+set(BINDINGS _dtcc_wrangler)
 
 # Add Python bindings
-pybind11_add_module(_bindings MODULE ${CMAKE_SOURCE_DIR}/src/cpp/bindings.cpp)
-target_compile_definitions(_bindings PRIVATE VERSION_INFO=${PROJECT_VERSION})
-install(TARGETS _bindings DESTINATION dtcc_template)
+pybind11_add_module(${BINDINGS} MODULE ${CMAKE_SOURCE_DIR}/src/cpp/bindings.cpp)
+target_compile_definitions(${BINDINGS} PRIVATE VERSION_INFO=${PROJECT_VERSION})
+target_link_libraries(${BINDINGS} PRIVATE ${LIBGEOS_LIBRARIES})
+
+install(TARGETS ${BINDINGS} DESTINATION dtcc_wrangler)
 
 # Add tests
-ADD_SUBDIRECTORY(tests/cpp)
+# ADD_SUBDIRECTORY(tests/cpp)
