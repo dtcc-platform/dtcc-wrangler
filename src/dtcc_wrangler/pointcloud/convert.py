@@ -2,10 +2,18 @@ from pypoints2grid import points2grid
 import numpy as np
 import dtcc_model as model
 import rasterio.transform
+from dtcc_model import PointCloud, Bounds
+from dtcc_wrangler.register import register_model_method
 
 
+@register_model_method
 def rasterize(
-    pc, cell_size, bounds=None, window_size=3, radius=0, ground_only=True
+    pc: PointCloud,
+    cell_size: float,
+    bounds: Bounds = None,
+    window_size: int = 3,
+    radius: float = 0,
+    ground_only: bool = True,
 ) -> model.Raster:
     """Rasterize a pointcloud"""
     if (

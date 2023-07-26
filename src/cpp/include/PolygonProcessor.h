@@ -4,6 +4,10 @@
 #ifndef DTCC_MERGE_POLYGONS_H
 #define DTCC_MERGE_POLYGONS_H
 
+#include <vector>
+#include <queue>
+#include <tuple>
+
 #include <model/Polygon.h>
 #include <BoundingBox.h>
 #include <model/Point.h>
@@ -13,16 +17,20 @@
 
 namespace DTCC_BUILDER
 {
-  class MergePolygons
+  class PolygonProcessor
   {
   public:
-    static std::vector<std::vector<size_t>> MergePolygons(const &polygons std::vector<Polygon>,
-                                                          double minimalDistance,
-                                                          std::vector<Polyon> &mergedPolygons)
+    typedef std::vector<std::vector<size_t>> MergedIndices;
+    typedef std::tuple<std::vector<Polygon>, MergedIndices> MergedPolygonResult;
+    // Merge polygons
+    static MergedPolygonResult MergePolygons(const std::vector<Polygon> &polygons,
+                                             double minimalDistance,
+                                             std::vector<Polygon> &mergedPolygons)
     {
       GEOS::Init();
       const double tol2 = minimalDistance * minimalDistance;
-      std::vector<std::vector<size_t>> mergedIndices{};
+      MergedIndices mergedIndices{};
+      mergedPolygons = polygons;
       // Counters
       size_t numMerged = 0;
       size_t numCompared = 0;
@@ -30,7 +38,7 @@ namespace DTCC_BUILDER
       // Initialize grid
       // Note: Grid size needs to be *at least* minimal distance
       // Note: Factor 4 seems to be a good choice (tested using dtcc-bench-run)
-      double h = 4.0 * ComputeMeanBuildingSize(polygons);
+      double h = 4.0 * ComputeMeanPolygonSize(polygons);
       BoundingBox2D bbox = ComputeBoundingBox(polygons);
       h = std::max(h, minimalDistance + Constants::Epsilon);
       size_t nX = static_cast<size_t>((bbox.Q.x - bbox.P.x) / h) + 1;
@@ -76,9 +84,9 @@ namespace DTCC_BUILDER
             continue;
 
           // Compute distance
-          const Polygon &Pi = buildings[i].Footprint;
-          const Polygon &Pj = buildings[j].Footprint;
-          const double d2 = Geometry::SquaredDistance2D(polygons[i], Pj);
+          const Polygon &Pi = mergedPolygons[i];
+          const Polygon &Pj = mergedPolygons[j];
+          const double d2 = Geometry::SquaredDistance2D(Pi, Pj);
           numCompared++;
 
           // Merge if distance is small
@@ -88,12 +96,16 @@ namespace DTCC_BUILDER
                   " are too close, merging");
 
             // Merge buildings
-            buildings[i].AttachedUUIDs.push_back(buildings[j].UUID);
-            MergeBuildings(buildings[i], buildings[j], minimalBuildingDistance);
+            // MergedIndices.push_back({i, j});
+            // buildings[i].AttachedUUIDs.push_back(buildings[j].UUID);
+            Polygon mergedPolygon = GEOS::MergePolygons(
+                Pi, Pj, minimalDistance);
+            mergedPolygons[i] = mergedPolygon;
+            // MergeBuildings(buildings[i], buildings[j], minimalBuildingDistance);
             numMerged++;
 
             // Update binning
-            UpdateBinning(polygons2bins, bin2polygons, i, buildings[i], grid);
+            UpdateBinning(polygons2bins, bin2polygons, i, mergedPolygons[i], grid);
 
             // Add building back to queue
             indices.push(i);
@@ -101,13 +113,15 @@ namespace DTCC_BUILDER
         }
       }
       GEOS::Finish();
-      return mergedIndices;
+      MergedPolygonResult result{mergedPolygons, mergedIndices};
+      return result;
     }
 
   private:
     static double ComputeMeanPolygonSize(const std::vector<Polygon> &polygons)
     {
       double meanSize = 0.0;
+      double min_x, min_y, max_x, max_y;
       constexpr double max = std::numeric_limits<double>::max();
 
       for (const auto &polygon : polygons)
@@ -121,7 +135,7 @@ namespace DTCC_BUILDER
           max_x = std::max(max_x, vertex.x);
           max_y = std::max(max_y, vertex.y);
         }
-        meanSize += std::max(max_x - min_x, max_y - min_y)
+        meanSize += std::max(max_x - min_x, max_y - min_y);
       }
       return meanSize / polygons.size();
     }
@@ -135,7 +149,7 @@ namespace DTCC_BUILDER
 
       for (const auto &polygon : polygons)
       {
-        for (auto vertex : polygon.vertices)
+        for (auto vertex : polygon.Vertices)
         {
           min_x = std::min(min_x, vertex.x);
           min_y = std::min(min_y, vertex.y);
@@ -150,11 +164,11 @@ namespace DTCC_BUILDER
     UpdateBinning(std::vector<std::unordered_set<size_t>> &polygons2bins,
                   std::vector<std::unordered_set<size_t>> &bin2polygons,
                   size_t buildingIndex,
-                  const Building &building,
+                  const Polygon &polygon,
                   const Grid &grid)
     {
       // Compute bounding box of building
-      BoundingBox2D bbox(building.Footprint.Vertices);
+      BoundingBox2D bbox(polygon.Vertices);
 
       // Get grid cell size
       const double hx = grid.XStep;

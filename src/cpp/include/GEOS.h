@@ -150,7 +150,7 @@ namespace DTCC_BUILDER
     static Polygon
     MergePolygons(const Polygon &polygon0, const Polygon &polygon1, double tol)
     {
-      Timer timer("MergePolygons (GEOS)");
+      // Timer timer("MergePolygons (GEOS)");
 
       // Set geometric precision
       const double EPS = Constants::Epsilon;

@@ -1,9 +1,12 @@
 from dtcc_model import Landuse, Building
 from collections import defaultdict
 from statistics import mean, median, stdev
+from dtcc_wrangler.register import register_model_method
+from dtcc_model import City
 
 
-def summarize_landuse(city, print_summary=True):
+@register_model_method
+def summarize_landuse(city: City, print_summary=True):
     landuse_summaries = defaultdict(float)
     for lu in city.landuse:
         landuse_summaries[lu.landuse.name] += lu.area
@@ -14,7 +17,8 @@ def summarize_landuse(city, print_summary=True):
     return landuse_summaries
 
 
-def summarize_buildings(city, print_summary=True):
+@register_model_method
+def summarize_buildings(city: City, print_summary=True):
     building_footprint_areas = [b.area for b in city.buildings]
     summary = {
         "number": len(building_footprint_areas),

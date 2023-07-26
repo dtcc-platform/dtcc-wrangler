@@ -1,7 +1,9 @@
 from dtcc_wrangler.pointcloud.convert import rasterize
 from dtcc_model import City, PointCloud, Raster
+from dtcc_wrangler.register import register_model_method
 
 
+@register_model_method
 def terrain_from_pointcloud(
     city: City,
     pc: PointCloud,

@@ -3,8 +3,11 @@ from typing import List
 
 from dtcc_model import PointCloud
 from dtcc_io.logging import info, warning, error
+from dtcc_wrangler.register import register_model_method
 
-def remove_global_outliers(pc, margin):
+
+@register_model_method
+def remove_global_outliers(pc: PointCloud, margin: float):
     """Remove outliers from a pointcloud using a global margin."""
     z_pts = pc.points[:, 2]
     z_mean = np.mean(z_pts)
@@ -14,6 +17,7 @@ def remove_global_outliers(pc, margin):
     return pc
 
 
+@register_model_method
 def classification_filter(pc: PointCloud, classes: List[int], keep: bool = False):
     """Remove points from a pointcloud based on their classification.
     @param pc: PointCloud

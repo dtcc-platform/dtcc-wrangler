@@ -1,9 +1,12 @@
 import scipy.ndimage
 import numpy as np
 import rasterio
+from dtcc_wrangler.register import register_model_method
+from dtcc_model import Raster
 
 
-def fill_holes(raster):
+@register_model_method
+def fill_holes(raster: Raster):
     """Fill nodata holes in a raster using the nearest neighbour"""
     data = raster.data
     nodata = raster.nodata
@@ -18,7 +21,8 @@ def fill_holes(raster):
     return raster
 
 
-def resample(raster, cell_size=None, scale=None, method="bilinear"):
+@register_model_method
+def resample(raster: Raster, cell_size=None, scale=None, method="bilinear"):
     sample_methods = {
         "bilinear": 1,
         "nearest": 0,
