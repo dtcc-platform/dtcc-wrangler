@@ -30,3 +30,17 @@ class TestProcessCity(unittest.TestCase):
         self.assertTrue("URBAN" in landuse_summary)
         self.assertTrue("WATER" in landuse_summary)
         self.assertAlmostEqual(landuse_summary["WATER"], 8042, places=0)
+
+
+class TestModifyCity(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        building_shp_file = (
+            Path(__file__).parent / ".." / "data" / "MinimalCase" / "PropertyMap.shp"
+        ).resolve()
+
+        cls.city = io.load_footprints(building_shp_file, "uuid")
+
+    def test_merge_nothing(self):
+        merged_city = self.city.merger_buildings(0.1)
+        self.assertEqual(len(merged_city.buildings), len(self.city.buildings))
