@@ -3,6 +3,17 @@ requires = ["scikit-build-core", "pybind11==2.10.*"]
 build-backend = "scikit_build_core.build"
 
 [project]
+dependencies = [
+  "pybind11 >= 2.10.0, < 2.11.0",
+  "numpy >= 1.20.0, < 2.0.0",
+  "scipy >= 1.6.0, < 2.0.0",
+  "shapely >= 2.0.0, < 3.0.0",
+  "rasterio >= 1.2.0, < 2.0.0",
+  "rasterstats >= 0.19.0, < 1.0.0",
+  "pypoints2grid@git+https://github.com/dwastberg/pypoints2grid.git",
+  "dtcc-model@git+https://github.com/dtcc-platform/dtcc-model.git@develop",
+  "dtcc-io@git+https://github.com/dtcc-platform/dtcc-io.git@develop",
+]
 name = "dtcc-wrangler"
 version = "0.0.1"
 description = "Data wrangling tools for the DTCC project"
@@ -18,16 +29,6 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: C++",
   "License :: OSI Approved :: MIT License",
-]
-dependencies = [
-  "pybind11 >= 2.10.0, < 2.11.0",
-  "numpy >= 1.20.0, < 2.0.0",
-  "scipy >= 1.6.0, < 2.0.0",
-  "shapely >= 2.0.0, < 3.0.0",
-  "rasterio >= 1.2.0, < 2.0.0",
-  "rasterstats >= 0.19.0, < 1.0.0",
-  "pypoints2grid@git+https://github.com/dwastberg/pypoints2grid.git",
-  "dtcc-model@git+https://github.com/dtcc-platform/dtcc-model.git@develop",
 ]
 
 [project.optional-dependencies]
