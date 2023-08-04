@@ -9,6 +9,7 @@ from dtcc_model import City, Building
 from statistics import mean
 import dataclasses
 from copy import deepcopy
+from collections import defaultdict
 
 
 @register_model_method
@@ -48,9 +49,7 @@ def remove_small_buildings(city: City, min_area=10) -> City:
 
 
 @register_model_method
-def merger_buildings(
-    city: City, max_distance=0.15, simplify=True, remove_interior_holes=False
-) -> City:
+def merger_buildings(city: City, max_distance=0.15, simplify=True) -> City:
     """Merge buildings that are close together
     args:
         city: City
@@ -64,8 +63,6 @@ def merger_buildings(
 
     merged_city.buildings = []
     for idx, merged_polygon in enumerate(merged_polygons):
-        if remove_interior_holes:
-            merged_polygon = remove_holes(merged_polygon)
         merged_polygon = remove_slivers(merged_polygon, max_distance / 2)
 
         b = dataclasses.replace(city.buildings[merged_polygons_idx[idx][0]])
@@ -77,6 +74,17 @@ def merger_buildings(
         b.roofpoints = city.buildings[merged_polygons_idx[idx][0]].roofpoints
         for i in merged_polygons_idx[idx][1:]:
             b.roofpoints.merge(city.buildings[i].roofpoints)
+
+        property_dicts = [
+            city.buildings[i].properties for i in merged_polygons_idx[idx]
+        ]
+
+        merged_properties = defaultdict(list)
+        for p in property_dicts:
+            for k, v in p.items():
+                merged_properties[k].append(v)
+        b.properties = dict(merged_properties)
+
         merged_city.buildings.append(b)
     if simplify:
         merged_city = simplify_buildings(merged_city, max_distance / 2)
