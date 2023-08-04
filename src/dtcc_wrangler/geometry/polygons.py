@@ -11,6 +11,8 @@ from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import connected_components
 from collections import defaultdict
 
+from dtcc_wrangler.logging import debug, info, warning, error, critical
+
 
 def merge_polygons_convexhull(p1, p2):
     mp = MultiPolygon([p1, p2])
@@ -57,11 +59,14 @@ def merge_polygons_snapping(p1, p2, tol):
 
 def merge_polygons(p1, p2, tol):
     mp = p1.union(p2)
+    # if mp.geom_type != "Polygon":
+    #     info("Failed to merge polygons. Trying snapping")
+    #     mp = merge_polygons_snapping(p1, p2, tol)
     if mp.geom_type != "Polygon":
-        mp = merge_polygons_snapping(p1, p2, tol)
-    if mp is None:
+        info("Failed to merge polygons. Trying buffering")
         mp = merge_polygons_buffering(p1, p2, tol)
         if mp is None:
+            info("Failed to merge polygons. Falling back to convex hull")
             mp = merge_polygons_convexhull(p1, p2)
     return mp
 
@@ -75,10 +80,22 @@ def simplify_polygon(p, tol):
     return sp
 
 
+def remove_slivers(p: Polygon, tol):
+    p = p.buffer(tol, 1, join_style=JOIN_STYLE.mitre).buffer(
+        -tol, 1, join_style=JOIN_STYLE.mitre
+    )
+    p = shapely.make_valid(p)
+    return p
+
+
+def remove_holes(p: Polygon):
+    return Polygon(p.exterior)
+
+
 def merge_multipolygon(multipolygon, tol=0.1):
     polygons = list(multipolygon.geoms)
     merged = []
-    orig_polygons = polygons.copy()
+    # orig_polygons = polygons.copy()
     if len(polygons) == 1:
         m = polygons[0]
     elif len(polygons) == 2:
@@ -90,7 +107,8 @@ def merge_multipolygon(multipolygon, tol=0.1):
                 if p.intersects(p2.buffer(tol)):
                     p = merge_polygons(p, p2, tol)
                     polygons.pop(i)
-            merged.append(p)
+                    polygons.append(p)
+        merged.append(p)
         m = shapely.ops.unary_union(merged)
     m = make_valid(m)
     return m
@@ -122,6 +140,9 @@ def merge_polygon_list(
 ) -> Tuple[List[Polygon], List[List[int]]]:
     """Merge all polygons closer than _tolerance_ in a list of polygons into a list of polygons and a list of indices of merged polygons."""
     merge_candidates = find_merge_candidates(polygons, tolerance)
+    if len(merge_candidates) == len(polygons):
+        # No polygons withon tolerance of each other
+        return polygons, merge_candidates
     merged_polygons = []
     for mc in merge_candidates:
         if len(mc) == 1:
@@ -135,7 +156,8 @@ def merge_polygon_list(
             else:
                 m = merge_multipolygon(m, tolerance)
                 if m.geom_type != "Polygon":
-                    print("Failed to merge polygon. Falling back to convex hull")
+                    print("Failed to merge polygon list. Falling back to convex hull")
                     m = m.convex_hull
                 merged_polygons.append(m)
+
     return merged_polygons, merge_candidates
