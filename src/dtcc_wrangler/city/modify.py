@@ -49,11 +49,17 @@ def remove_small_buildings(city: City, min_area=10) -> City:
 
 
 @register_model_method
-def merger_buildings(city: City, max_distance=0.15, simplify=True) -> City:
+def merger_buildings(
+    city: City, max_distance=0.15, simplify=True, properties_merge_strategy="list"
+) -> City:
     """Merge buildings that are close together
     args:
         city: City
         max_distance: float maximum distance between buildings
+        properties_merge_strategy: str strategy for merging properties.
+            Options are 'list' and 'sample'. 'list' will create a list of
+            all properties for the merged building. 'sample' will pick a
+            property value from a random building.
     returns:
         City
     """
@@ -78,11 +84,17 @@ def merger_buildings(city: City, max_distance=0.15, simplify=True) -> City:
         property_dicts = [
             city.buildings[i].properties for i in merged_polygons_idx[idx]
         ]
-
-        merged_properties = defaultdict(list)
-        for p in property_dicts:
-            for k, v in p.items():
-                merged_properties[k].append(v)
+        if properties_merge_strategy == "list":
+            merged_properties = defaultdict(list)
+            for p in property_dicts:
+                for k, v in p.items():
+                    merged_properties[k].append(v)
+        elif properties_merge_strategy == "sample":
+            merged_properties = {}
+            for p in property_dicts:
+                for k, v in p.items():
+                    if v:
+                        merged_properties[k] = v
         b.properties = dict(merged_properties)
 
         merged_city.buildings.append(b)
