@@ -2,6 +2,7 @@ from dtcc_wrangler.geometry.polygons import (
     merge_polygon_list,
     simplify_polygon,
     remove_slivers,
+    remove_holes,
 )
 from dtcc_wrangler.register import register_model_method
 from dtcc_model import City, Building
@@ -11,7 +12,7 @@ from copy import deepcopy
 
 
 @register_model_method
-def simplify_buildings(city: City, tolerance=0.1):
+def simplify_buildings(city: City, tolerance=0.1) -> City:
     """Simplify buildings
     args:
         city: City
@@ -29,7 +30,27 @@ def simplify_buildings(city: City, tolerance=0.1):
 
 
 @register_model_method
-def merger_buildings(city: City, max_distance=0.15, simplify=True):
+def remove_small_buildings(city: City, min_area=10) -> City:
+    """Remove small buildings
+    args:
+        city: City
+        min_area: float minimum area of building
+    returns:
+        City
+    """
+    filtered_city = deepcopy(city)
+    filtered_city.buildings = []
+    for b in city.buildings:
+        print(b.footprint.area)
+        if b.footprint.area > min_area:
+            filtered_city.buildings.append(b)
+    return filtered_city
+
+
+@register_model_method
+def merger_buildings(
+    city: City, max_distance=0.15, simplify=True, remove_interior_holes=False
+) -> City:
     """Merge buildings that are close together
     args:
         city: City
@@ -43,6 +64,8 @@ def merger_buildings(city: City, max_distance=0.15, simplify=True):
 
     merged_city.buildings = []
     for idx, merged_polygon in enumerate(merged_polygons):
+        if remove_interior_holes:
+            merged_polygon = remove_holes(merged_polygon)
         merged_polygon = remove_slivers(merged_polygon, max_distance / 2)
 
         b = dataclasses.replace(city.buildings[merged_polygons_idx[idx][0]])

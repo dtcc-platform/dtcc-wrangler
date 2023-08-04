@@ -39,8 +39,35 @@ class TestModifyCity(unittest.TestCase):
             Path(__file__).parent / ".." / "data" / "MinimalCase" / "PropertyMap.shp"
         ).resolve()
 
+        case1_test_file = (
+            Path(__file__).parent / ".." / "data" / "poly_merging" / "testcase1.shp"
+        ).resolve()
+        case2_test_file = (
+            Path(__file__).parent / ".." / "data" / "poly_merging" / "testcase2.shp"
+        ).resolve()
+
         cls.city = io.load_footprints(building_shp_file, "uuid")
+        cls.testcase1 = io.load_footprints(case1_test_file, "uuid")
+        cls.testcase2 = io.load_footprints(case2_test_file, "uuid")
 
     def test_merge_nothing(self):
         merged_city = self.city.merger_buildings(0.1)
         self.assertEqual(len(merged_city.buildings), len(self.city.buildings))
+
+    def test_merge_case1(self):
+        merged_city = self.testcase1.merger_buildings(0.1)
+        self.assertEqual(len(merged_city.buildings), 1)
+
+    def test_merge_case2(self):
+        merged_city = self.testcase2.merger_buildings(0.1)
+        self.assertEqual(len(merged_city.buildings), 3)
+
+        merged_city = self.testcase2.merger_buildings(1.0)
+        self.assertEqual(len(merged_city.buildings), 2)
+
+    def test_remove_small_buildings(self):
+        filtered_city = self.testcase2.remove_small_buildings(10)
+
+        self.assertEqual(
+            len(filtered_city.buildings), len(self.testcase2.buildings) - 3
+        )
