@@ -49,7 +49,7 @@ def remove_small_buildings(city: City, min_area=10) -> City:
 
 
 @register_model_method
-def merger_buildings(
+def merge_buildings(
     city: City, max_distance=0.15, simplify=True, properties_merge_strategy="list"
 ) -> City:
     """Merge buildings that are close together
