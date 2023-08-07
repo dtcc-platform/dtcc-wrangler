@@ -135,7 +135,23 @@ def find_merge_candidates(polygons: List[Polygon], tol: float) -> List[List[int]
     return polygon_indices
 
 
-def merge_polygon_list(
+def merge_list_of_polygons(mcp: List[Polygon], tolerance=1e-2) -> Polygon:
+    if len(mcp) == 1:
+        return mcp[0]
+    else:
+        m = shapely.ops.unary_union(mcp)
+        m = shapely.make_valid(m)
+        if m.geom_type == "Polygon":
+            return m
+        else:
+            m = merge_multipolygon(m, tolerance)
+            if m.geom_type != "Polygon":
+                print("Failed to merge polygon list. Falling back to convex hull")
+                m = m.convex_hull
+            return m
+
+
+def polygon_merger(
     polygons: List[Polygon], tolerance: float = 1e-2
 ) -> Tuple[List[Polygon], List[List[int]]]:
     """Merge all polygons closer than _tolerance_ in a list of polygons into a list of polygons and a list of indices of merged polygons."""
@@ -143,21 +159,13 @@ def merge_polygon_list(
     if len(merge_candidates) == len(polygons):
         # No polygons withon tolerance of each other
         return polygons, merge_candidates
-    merged_polygons = []
+    merge_candidate_polygons = []
     for mc in merge_candidates:
-        if len(mc) == 1:
-            merged_polygons.append(polygons[mc[0]])
-        else:
-            m = shapely.ops.unary_union([polygons[idx] for idx in mc])
-            m = shapely.make_valid(m)
+        merge_candidate_polygons.append([polygons[idx] for idx in mc])
 
-            if m.geom_type == "Polygon":
-                merged_polygons.append(m)
-            else:
-                m = merge_multipolygon(m, tolerance)
-                if m.geom_type != "Polygon":
-                    print("Failed to merge polygon list. Falling back to convex hull")
-                    m = m.convex_hull
-                merged_polygons.append(m)
+    merged_polygons = []
+    for mcp in merge_candidate_polygons:
+        m = merge_list_of_polygons(mcp, tolerance)
+        merged_polygons.append(m)
 
     return merged_polygons, merge_candidates
