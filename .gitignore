@@ -1,5 +1,6 @@
 build/
 scratch/
+benchmark/
 
 .idea/
 .vscode/

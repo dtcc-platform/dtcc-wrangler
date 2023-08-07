@@ -1,5 +1,5 @@
 from dtcc_wrangler.geometry.polygons import (
-    merge_polygon_list,
+    polygon_merger,
     simplify_polygon,
     remove_slivers,
     remove_holes,
@@ -65,7 +65,7 @@ def merge_buildings(
     """
     merged_city = deepcopy(city)
     footprints = [b.footprint for b in city.buildings]
-    merged_polygons, merged_polygons_idx = merge_polygon_list(footprints, max_distance)
+    merged_polygons, merged_polygons_idx = polygon_merger(footprints, max_distance)
 
     merged_city.buildings = []
     for idx, merged_polygon in enumerate(merged_polygons):

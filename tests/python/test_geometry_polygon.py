@@ -2,7 +2,7 @@ import unittest
 import dtcc_io as io
 from pathlib import Path
 from shapely.geometry import Polygon, MultiPolygon
-from dtcc_wrangler.geometry.polygons import merge_polygon_list, simplify_polygon
+from dtcc_wrangler.geometry.polygons import polygon_merger, simplify_polygon
 
 
 class TestMergePolygons(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestMergePolygons(unittest.TestCase):
 
     def test_merge_polygons(self):
         polys = [self.p1, self.p2, self.p3]
-        merged_polygons, merged_polygons_idx = merge_polygon_list(polys, 0.15)
+        merged_polygons, merged_polygons_idx = polygon_merger(polys, 0.15)
         self.assertEqual(len(merged_polygons), 2)
         self.assertEqual(len(merged_polygons_idx), 2)
         self.assertEqual(merged_polygons_idx[0], [0, 1])
