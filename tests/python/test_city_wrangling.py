@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-
+from copy import deepcopy
 import dtcc_io as io
 
 
@@ -51,18 +51,18 @@ class TestModifyCity(unittest.TestCase):
         cls.testcase2 = io.load_footprints(case2_test_file, "uuid")
 
     def test_merge_nothing(self):
-        merged_city = self.city.merger_buildings(0.1)
+        merged_city = self.city.merge_buildings(0.1)
         self.assertEqual(len(merged_city.buildings), len(self.city.buildings))
 
     def test_merge_case1(self):
-        merged_city = self.testcase1.merger_buildings(0.1)
+        merged_city = self.testcase1.merge_buildings(0.1)
         self.assertEqual(len(merged_city.buildings), 1)
 
     def test_merge_case2(self):
-        merged_city = self.testcase2.merger_buildings(0.1)
+        merged_city = self.testcase2.merge_buildings(0.1)
         self.assertEqual(len(merged_city.buildings), 3)
 
-        merged_city = self.testcase2.merger_buildings(1.0)
+        merged_city = self.testcase2.merge_buildings(1.0)
         self.assertEqual(len(merged_city.buildings), 2)
 
     def test_remove_small_buildings(self):
@@ -71,3 +71,17 @@ class TestModifyCity(unittest.TestCase):
         self.assertEqual(
             len(filtered_city.buildings), len(self.testcase2.buildings) - 3
         )
+
+    def test_merge_heights(self):
+        tc2 = deepcopy(self.testcase2)
+        for b in tc2.buildings:
+            b.height = 10
+            b.ground_level = 2
+        tc2.buildings[0].height = 20
+        tc2.buildings[0].ground_level = 1
+        merged_city = tc2.merge_buildings(0.1)
+        self.assertGreater(merged_city.buildings[0].height, 10)
+        self.assertEqual(merged_city.buildings[-1].height, 10)
+
+        self.assertEqual(merged_city.buildings[0].ground_level, 1)
+        self.assertEqual(merged_city.buildings[-1].ground_level, 2)
