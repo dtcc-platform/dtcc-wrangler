@@ -14,14 +14,17 @@ def terrain_from_pointcloud(
 ) -> City:
     """Generate a terrain model from a pointcloud
     args:
+
         pc: PointCloud to use for terrain
         cell_size: float cell size in meters
         window_size: int window size for interpolation
         radius: float radius for interpolation
-    returns:
-        City
 
+    returns:
+
+        City
     """
+
     dem = rasterize(
         pc,
         cell_size,

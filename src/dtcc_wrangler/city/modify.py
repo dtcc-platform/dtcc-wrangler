@@ -4,6 +4,7 @@ from dtcc_wrangler.geometry.polygons import (
     remove_slivers,
     remove_holes,
 )
+
 from dtcc_wrangler.register import register_model_method
 from dtcc_model import City, Building
 from statistics import mean
@@ -16,11 +17,15 @@ from collections import defaultdict
 def simplify_buildings(city: City, tolerance=0.1) -> City:
     """Simplify buildings
     args:
+
         city: City
         tolerance: float tolerance for simplification
+
     returns:
+
         City
     """
+
     simplified_city = deepcopy(city)
     simplified_city.buildings = []
     for b in city.buildings:
@@ -34,11 +39,15 @@ def simplify_buildings(city: City, tolerance=0.1) -> City:
 def remove_small_buildings(city: City, min_area=10) -> City:
     """Remove small buildings
     args:
+
         city: City
         min_area: float minimum area of building
+
     returns:
+
         City
     """
+
     filtered_city = deepcopy(city)
     filtered_city.buildings = []
     for b in city.buildings:
@@ -52,17 +61,22 @@ def remove_small_buildings(city: City, min_area=10) -> City:
 def merge_buildings(
     city: City, max_distance=0.15, simplify=True, properties_merge_strategy="list"
 ) -> City:
-    """Merge buildings that are close together
+    """
+    Merge buildings that are close together
     args:
+
         city: City
         max_distance: float maximum distance between buildings
         properties_merge_strategy: str strategy for merging properties.
-            Options are 'list' and 'sample'. 'list' will create a list of
-            all properties for the merged building. 'sample' will pick a
-            property value from a random building.
+        Options are 'list' and 'sample'. 'list' will create a list of
+        all properties for the merged building. 'sample' will pick a
+        property value from a random building.
+
     returns:
+
         City
     """
+
     merged_city = deepcopy(city)
     footprints = [b.footprint for b in city.buildings]
     merged_polygons, merged_polygons_idx = polygon_merger(footprints, max_distance)
