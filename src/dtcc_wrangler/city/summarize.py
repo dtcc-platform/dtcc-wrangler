@@ -33,7 +33,6 @@ def summarize_buildings(city: City, print_summary=True):
     Summarize the buildings of a `City` object.
 
     Args:
-        city (City): The `City` object to summarize the buildings of.
         print_summary (bool): Whether to print the summary to the console (default True).
 
     Returns:

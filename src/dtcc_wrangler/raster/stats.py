@@ -12,7 +12,6 @@ def stats(raster: Raster, polygons: Union[Polygon, List[Polygon]], stats=["mean"
     Compute statistics for a raster within a polygon.
 
     Args:
-        raster: A Raster object.
         polygons: A Polygon or a list of Polygons.
         stats: A list of statistics to compute. Supported statistics are:
         ['count', 'min', 'max', 'mean', 'median', 'majority', 'minority', 'unique',  'sum', 'std', 'var', 'percentile_X' (where X is a number between 0 and 100)]

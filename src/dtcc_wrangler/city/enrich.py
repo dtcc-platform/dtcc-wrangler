@@ -16,7 +16,6 @@ def terrain_from_pointcloud(
     Generate a terrain model from a point cloud using interpolation.
 
     Args:
-        city (City): The `City` object to enrich with the terrain model.
         pc (PointCloud): The `PointCloud` object to use for terrain generation.
         cell_size (float): The cell size in meters for the terrain model.
         window_size (int): The window size for interpolation (default 3).

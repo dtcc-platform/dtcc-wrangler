@@ -12,7 +12,6 @@ def remove_global_outliers(pc: PointCloud, margin: float):
     Remove outliers from a `PointCloud` object using a global margin.
 
     Args:
-        pc (PointCloud): The `PointCloud` object to remove outliers from.
         margin (float): The margin in standard deviations to consider a point an outlier.
 
     Returns:
@@ -32,7 +31,6 @@ def classification_filter(pc: PointCloud, classes: List[int], keep: bool = False
     Filter a `PointCloud` object based on its classification.
 
     Args:
-        pc (PointCloud): The `PointCloud` object to filter.
         classes (List[int]): The classification values to keep or remove.
         keep (bool): Whether to keep the points with the specified classification values (default False, remove them).
 

@@ -10,9 +10,6 @@ def fill_holes(raster: Raster):
     """
     Fill nodata holes in a `Raster` object using the nearest neighbour.
 
-    Args:
-        raster (Raster): The `Raster` object to fill the holes of.
-
     Returns:
         Raster: A new `Raster` object with the holes filled.
     """
@@ -35,7 +32,6 @@ def resample(raster: Raster, cell_size=None, scale=None, method="bilinear"):
     Resample a `Raster` object to a new cell size or scale.
 
     Args:
-        raster (Raster): The `Raster` object to resample.
         cell_size (float): The new cell size in meters (default None).
         scale (float): The scaling factor for the cell size (default None).
         method (str): The resampling method to use, one of "bilinear", "nearest", or "cubic" (default "bilinear").

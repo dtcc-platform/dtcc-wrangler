@@ -61,14 +61,19 @@ def merge_buildings(
     """
     Merge buildings that are close together.
 
-    Args:
-        city (City): The `City` object to merge the buildings of.
-        max_distance (float): The maximum distance in meters between buildings to consider them close enough to merge (default 0.15).
-        simplify (bool): Whether to simplify the merged buildings (default True).
-        properties_merge_strategy (str): The strategy for merging properties. Options are 'list' and 'sample'. 'list' will create a list of all properties for the merged building. 'sample' will pick a property value from a random building (default "list").
+    Parameters
+    ----------
+    max_distance : float, optional
+        The maximum distance in meters between buildings to consider them close enough to merge (default 0.15).
+    simplify : bool, optional
+        Whether to simplify the merged buildings (default True).
+    properties_merge_strategy : str, optional
+        The strategy for merging properties. Options are 'list' and 'sample'. 'list' will create a list of all properties for the merged building. 'sample' will pick a property value from a random building (default "list").
 
-    Returns:
-        City: A new `City` object with the merged buildings.
+    Returns
+    -------
+    City
+        A new `City` object with the merged buildings.
     """
     merged_city = deepcopy(city)
     footprints = [b.footprint for b in city.buildings]

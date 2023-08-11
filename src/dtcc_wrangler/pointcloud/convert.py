@@ -19,7 +19,6 @@ def rasterize(
     Rasterize a point cloud into a `Raster` object.
 
     Args:
-        pc (PointCloud): The `PointCloud` object to rasterize.
         cell_size (float): The size of the raster cells in meters.
         bounds (Bounds): The bounds of the area to rasterize (default None, uses the bounds of the point cloud).
         window_size (int): The size of the window for the interpolation (default 3).
