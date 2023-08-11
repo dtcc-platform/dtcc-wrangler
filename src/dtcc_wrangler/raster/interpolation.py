@@ -7,7 +7,15 @@ from dtcc_model import Raster
 
 @register_model_method
 def fill_holes(raster: Raster):
-    """Fill nodata holes in a raster using the nearest neighbour"""
+    """
+    Fill nodata holes in a `Raster` object using the nearest neighbour.
+
+    Args:
+        raster (Raster): The `Raster` object to fill the holes of.
+
+    Returns:
+        Raster: A new `Raster` object with the holes filled.
+    """
     data = raster.data
     nodata = raster.nodata
     mask = data == nodata
@@ -23,6 +31,18 @@ def fill_holes(raster: Raster):
 
 @register_model_method
 def resample(raster: Raster, cell_size=None, scale=None, method="bilinear"):
+    """
+    Resample a `Raster` object to a new cell size or scale.
+
+    Args:
+        raster (Raster): The `Raster` object to resample.
+        cell_size (float): The new cell size in meters (default None).
+        scale (float): The scaling factor for the cell size (default None).
+        method (str): The resampling method to use, one of "bilinear", "nearest", or "cubic" (default "bilinear").
+
+    Returns:
+        Raster: A new `Raster` object with the resampled data.
+    """
     sample_methods = {
         "bilinear": 1,
         "nearest": 0,
@@ -34,13 +54,18 @@ def resample(raster: Raster, cell_size=None, scale=None, method="bilinear"):
         raise ValueError(
             f"Invalid resampling method, use one of {list(sample_methods.keys())}"
         )
+    _raster = raster.deepcopy()
     if cell_size is not None:
-        scale = cell_size / raster.cell_size[0]
+        scale = cell_size / _raster.cell_size[0]
     if scale == 1:
-        return raster
-    raster.data = scipy.ndimage.zoom(
-        raster.data, scale, order=sample_methods[method], mode="nearest", grid_mode=True
+        return _raster
+    _raster.data = scipy.ndimage.zoom(
+        _raster.data,
+        scale,
+        order=sample_methods[method],
+        mode="nearest",
+        grid_mode=True,
     )
-    raster.georef *= raster.georef.scale(scale, scale)
+    _raster.georef *= _raster.georef.scale(scale, scale)
 
-    return raster
+    return _raster

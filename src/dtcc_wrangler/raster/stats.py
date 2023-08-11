@@ -8,7 +8,9 @@ from dtcc_wrangler.register import register_model_method
 
 @register_model_method
 def stats(raster: Raster, polygons: Union[Polygon, List[Polygon]], stats=["mean"]):
-    """Compute statistics for a raster within a polygon.
+    """
+    Compute statistics for a raster within a polygon.
+
     Args:
         raster: A Raster object.
         polygons: A Polygon or a list of Polygons.

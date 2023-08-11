@@ -8,7 +8,16 @@ from dtcc_wrangler.register import register_model_method
 
 @register_model_method
 def remove_global_outliers(pc: PointCloud, margin: float):
-    """Remove outliers from a pointcloud using a global margin."""
+    """
+    Remove outliers from a `PointCloud` object using a global margin.
+
+    Args:
+        pc (PointCloud): The `PointCloud` object to remove outliers from.
+        margin (float): The margin in standard deviations to consider a point an outlier.
+
+    Returns:
+        PointCloud: A new `PointCloud` object with the outliers removed.
+    """
     z_pts = pc.points[:, 2]
     z_mean = np.mean(z_pts)
     z_std = np.std(z_pts)
@@ -19,10 +28,16 @@ def remove_global_outliers(pc: PointCloud, margin: float):
 
 @register_model_method
 def classification_filter(pc: PointCloud, classes: List[int], keep: bool = False):
-    """Remove points from a pointcloud based on their classification.
-    @param pc: PointCloud
-    @param classes: List of classes to remove
-    @param keep: If True, keep only the specified classes
+    """
+    Filter a `PointCloud` object based on its classification.
+
+    Args:
+        pc (PointCloud): The `PointCloud` object to filter.
+        classes (List[int]): The classification values to keep or remove.
+        keep (bool): Whether to keep the points with the specified classification values (default False, remove them).
+
+    Returns:
+        PointCloud: A new `PointCloud` object with the specified points removed.
     """
     if len(pc.points) != len(pc.classification):
         warning("Pointcloud not classified, returning original pointcloud.")

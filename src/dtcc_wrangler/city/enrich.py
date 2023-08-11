@@ -12,19 +12,20 @@ def terrain_from_pointcloud(
     radius=0,
     ground_only=True,
 ) -> City:
-    """Generate a terrain model from a pointcloud
-    args:
-
-        pc: PointCloud to use for terrain
-        cell_size: float cell size in meters
-        window_size: int window size for interpolation
-        radius: float radius for interpolation
-
-    returns:
-
-        City
     """
+    Generate a terrain model from a point cloud using interpolation.
 
+    Args:
+        city (City): The `City` object to enrich with the terrain model.
+        pc (PointCloud): The `PointCloud` object to use for terrain generation.
+        cell_size (float): The cell size in meters for the terrain model.
+        window_size (int): The window size for interpolation (default 3).
+        radius (float): The radius for interpolation (default 0).
+        ground_only (bool): Whether to use only ground points for terrain generation (default True).
+
+    Returns:
+        City: The `City` object enriched with the terrain model.
+    """
     dem = rasterize(
         pc,
         cell_size,

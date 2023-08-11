@@ -15,7 +15,20 @@ def rasterize(
     radius: float = 0,
     ground_only: bool = True,
 ) -> model.Raster:
-    """Rasterize a pointcloud"""
+    """
+    Rasterize a point cloud into a `Raster` object.
+
+    Args:
+        pc (PointCloud): The `PointCloud` object to rasterize.
+        cell_size (float): The size of the raster cells in meters.
+        bounds (Bounds): The bounds of the area to rasterize (default None, uses the bounds of the point cloud).
+        window_size (int): The size of the window for the interpolation (default 3).
+        radius (float): The radius of the search for the interpolation (default 0).
+        ground_only (bool): Whether to only use ground points for the rasterization (default True).
+
+    Returns:
+        Raster: A `Raster` object representing the rasterized point cloud.
+    """
     if (
         ground_only
         and (len(pc.classification) == len(pc.points))
@@ -38,5 +51,4 @@ def rasterize(
         bounds.west, bounds.north, cell_size, cell_size
     )
     dem_raster = dem_raster.fill_holes()
-    # print(f"Rasterized pointcloud to {dem_raster}")
     return dem_raster
