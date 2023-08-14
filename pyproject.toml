@@ -3,19 +3,9 @@ requires = ["setuptools>=61.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-dependencies = [
-  "numpy >= 1.20.0, < 2.0.0",
-  "scipy >= 1.6.0, < 2.0.0",
-  "shapely >= 2.0.0, < 3.0.0",
-  "rasterio >= 1.2.0, < 2.0.0",
-  "rasterstats >= 0.19.0, < 1.0.0",
-  "pypoints2grid@git+https://github.com/dwastberg/pypoints2grid.git",
-  "dtcc-model@git+https://github.com/dtcc-platform/dtcc-model.git@develop",
-  "dtcc-io@git+https://github.com/dtcc-platform/dtcc-io.git@develop",
-]
+version = "0.7.2"
 name = "dtcc-wrangler"
-version = "0.7.1"
-description = "Data wrangling tools for the DTCC project"
+description = "DTCC Wrangler"
 readme = "README.md"
 authors = [
   { name = "Anders Logg", email = "logg@chalmers.se" },
@@ -26,8 +16,17 @@ requires-python = ">=3.8"
 classifiers = [
   "Intended Audience :: Science/Research",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: C++",
   "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+  "numpy >= 1.20.0, < 2.0.0",
+  "scipy >= 1.6.0, < 2.0.0",
+  "shapely >= 2.0.0, < 3.0.0",
+  "rasterio >= 1.2.0, < 2.0.0",
+  "rasterstats >= 0.19.0, < 1.0.0",
+  "pypoints2grid@git+https://github.com/dwastberg/pypoints2grid.git",
+  "dtcc-model@git+https://github.com/dtcc-platform/dtcc-model.git@develop",
+  "dtcc-io@git+https://github.com/dtcc-platform/dtcc-io.git@develop",
 ]
 
 [project.optional-dependencies]
