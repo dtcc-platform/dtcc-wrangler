@@ -3,6 +3,7 @@ import numpy as np
 import rasterio
 from dtcc_wrangler.register import register_model_method
 from dtcc_model import Raster
+from logging import info, warning, error
 
 
 @register_model_method
@@ -17,7 +18,7 @@ def fill_holes(raster: Raster):
     nodata = raster.nodata
     mask = data == nodata
     if np.any(mask):
-        print(f"filling {mask.sum()} holes in raster")
+        info(f"filling {mask.sum()} holes in raster")
         ind = scipy.ndimage.distance_transform_edt(
             mask, return_distances=False, return_indices=True
         )

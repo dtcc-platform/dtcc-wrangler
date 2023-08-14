@@ -146,7 +146,7 @@ def merge_list_of_polygons(mcp: List[Polygon], tolerance=1e-2) -> Polygon:
         else:
             m = merge_multipolygon(m, tolerance)
             if m.geom_type != "Polygon":
-                print("Failed to merge polygon list. Falling back to convex hull")
+                warning("Failed to merge polygon list. Falling back to convex hull")
                 m = m.convex_hull
             return m
 
