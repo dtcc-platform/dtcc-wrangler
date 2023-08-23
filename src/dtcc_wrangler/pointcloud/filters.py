@@ -86,6 +86,7 @@ def _find_vegetation(pc: PointCloud, filter_on_return_number=True):
         warning("Classification is not set for all points. Ignoring")
 
     if filter_on_return_number and not has_return_number:
+        filter_on_return_number = False
         warning("Return number is not set for all points. Ignoring")
 
     classes_with_vegetation = set([3, 4, 5])
@@ -102,6 +103,11 @@ def _find_vegetation(pc: PointCloud, filter_on_return_number=True):
         vegetation_indices = np.where(np.isin(pc.classification, veg_classes))[0]
 
     elif filter_on_return_number:
-        vegetation_indices = np.where(pc.return_number != pc.num_returns)[0]
+        is_veg = pc.return_number != pc.num_returns
+
+        # only reclassify points that are not already classified
+        if len(pc.classification) == len(pc.points):
+            is_veg = np.logical_and(is_veg, pc.classification == 1)
+        vegetation_indices = np.where(is_veg)[0]
 
     return vegetation_indices

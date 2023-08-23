@@ -51,7 +51,7 @@ def resample(raster: Raster, cell_size=None, scale=None, method="bilinear"):
         raise ValueError(
             f"Invalid resampling method, use one of {list(sample_methods.keys())}"
         )
-    _raster = raster.deepcopy()
+    _raster = raster.copy()
     if cell_size is not None:
         scale = cell_size / _raster.cell_size[0]
     if scale == 1:
