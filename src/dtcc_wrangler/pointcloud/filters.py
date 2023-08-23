@@ -45,3 +45,63 @@ def classification_filter(pc: PointCloud, classes: List[int], keep: bool = False
         mask = np.logical_not(mask)
     pc.remove_points(mask)
     return pc
+
+
+@register_model_method
+def remove_vegetation(pc: PointCloud) -> PointCloud:
+    """
+    Return a pioint cloud with vegetation removed.
+
+    Args:
+        pc (PointCloud): The `PointCloud` object to remove vegetation from.
+
+    Returns:
+        PointCloud: A new `PointCloud` object with the vegetation removed.
+    """
+    new_pc = pc.copy()
+    veg_indices = _find_vegetation(pc)
+    new_pc.remove_points(veg_indices)
+    return new_pc
+
+
+def _find_vegetation(pc: PointCloud, filter_on_return_number=True):
+    """Find the indices of points that belong to vegetation in a point cloud.
+
+    Args:
+        pc: A `PointCloud` object representing the point cloud to filter.
+        filter_on_return_number: A boolean indicating whether to filter on return number (default True).
+
+    Returns:
+        A 1D NumPy array of indices of points that belong to vegetation.
+    """
+
+    has_classification = len(pc.classification) == len(pc.points)
+    has_return_number = len(pc.return_number) == len(pc.points)
+    if not has_classification and not has_return_number:
+        warning(
+            "Classification and return number are not set for all points. Ignoring vegetation filter."
+        )
+        return np.array([])
+    if not has_classification:
+        warning("Classification is not set for all points. Ignoring")
+
+    if filter_on_return_number and not has_return_number:
+        warning("Return number is not set for all points. Ignoring")
+
+    classes_with_vegetation = set([3, 4, 5])
+    used_classes = pc.used_classifications()
+    veg_classes = classes_with_vegetation.intersection(used_classes)
+    if len(veg_classes) == 0:
+        has_classification = False
+    else:
+        veg_classes = np.array(list(veg_classes))
+        filter_on_return_number = False
+
+    vegetation_indices = np.array([])
+    if has_classification:
+        vegetation_indices = np.where(np.isin(pc.classification, veg_classes))[0]
+
+    elif filter_on_return_number:
+        vegetation_indices = np.where(pc.return_number != pc.num_returns)[0]
+
+    return vegetation_indices
