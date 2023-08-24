@@ -24,7 +24,7 @@ dependencies = [
   "shapely >= 2.0.0, < 3.0.0",
   "rasterio >= 1.2.0, < 2.0.0",
   "rasterstats >= 0.19.0, < 1.0.0",
-  "pypoints2grid@git+https://github.com/dwastberg/pypoints2grid.git",
+  "pypoints2grid",
   "dtcc-model@git+https://github.com/dtcc-platform/dtcc-model.git@develop",
   "dtcc-io@git+https://github.com/dtcc-platform/dtcc-io.git@develop",
 ]
