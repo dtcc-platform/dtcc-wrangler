@@ -4,6 +4,7 @@ from typing import List
 from dtcc_model import PointCloud
 from dtcc_io.logging import info, warning, error
 from dtcc_wrangler.register import register_model_method
+from dtcc_wrangler import _dtcc_wrangler
 
 
 @register_model_method
@@ -61,6 +62,28 @@ def remove_vegetation(pc: PointCloud) -> PointCloud:
     new_pc = pc.copy()
     veg_indices = _find_vegetation(pc)
     new_pc.remove_points(veg_indices)
+    return new_pc
+
+
+@register_model_method
+def statistical_outlier_filter(
+    pc: PointCloud, k: int = 8, std_mul: float = 2.0
+) -> PointCloud:
+    """
+    Return a point cloud with statistical outliers removed.
+
+    Args:
+        pc (PointCloud): The `PointCloud` object to remove outliers from.
+        k (int): The number of neighbors to consider when calculating the mean distance (default 8).
+        std_mul (float): The standard deviation multiplier for the distance threshold (default 2.0).
+
+    Returns:
+        PointCloud: A new `PointCloud` object with the outliers removed.
+    """
+    new_pc = pc.copy()
+    outliers = _dtcc_wrangler.statisitical_outlier_finder(pc.points, k, std_mul)
+    print(f"outliers {outliers}")
+    new_pc = new_pc.remove_points(outliers)
     return new_pc
 
 
