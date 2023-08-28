@@ -2,6 +2,7 @@
 #include "model/Point.h"
 #include "model/Vector.h"
 #include "NearestNeighbours.h"
+#include "Logging.h"
 
 namespace DTCC_BUILDER
 {
