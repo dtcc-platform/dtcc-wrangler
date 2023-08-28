@@ -1,6 +1,7 @@
 from . import raster
 from . import pointcloud
 from . import city
+from . import mesh
 from . import _dtcc_wrangler
 
 __all__ = []
