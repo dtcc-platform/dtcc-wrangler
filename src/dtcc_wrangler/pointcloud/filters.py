@@ -9,7 +9,8 @@ from dtcc_wrangler.register import register_model_method
 @register_model_method
 def remove_global_outliers(pc: PointCloud, margin: float):
     """
-    Remove outliers from a `PointCloud` object using a global margin.
+    Remove outliers from a `PointCloud` whose Z-values are more than `margin`
+    standard deviations from the mean.
 
     Args:
         margin (float): The margin in standard deviations to consider a point an outlier.
@@ -17,12 +18,14 @@ def remove_global_outliers(pc: PointCloud, margin: float):
     Returns:
         PointCloud: A new `PointCloud` object with the outliers removed.
     """
+
     z_pts = pc.points[:, 2]
     z_mean = np.mean(z_pts)
     z_std = np.std(z_pts)
     outliers = np.where(np.abs(z_pts - z_mean) > margin * z_std)[0]
-    pc.remove_points(outliers)
-    return pc
+    new_pc = pc.copy()
+    new_pc.remove_points(outliers)
+    return new_pc
 
 
 @register_model_method
