@@ -27,7 +27,8 @@ namespace DTCC_WRANGLER
         {
             points[i] = DTCC_BUILDER::Point3D(pts_r(i, 0), pts_r(i, 1), pts_r(i, 2));
         }
-        return DTCC_BUILDER::PointCloudProcessor::StatisticalOutlierFinder(points, neighbours, outlierMargin, false);
+        auto outlier_indices = DTCC_BUILDER::PointCloudProcessor::StatisticalOutlierFinder(points, neighbours, outlierMargin, false);
+        return outlier_indices;
     }
 
 }

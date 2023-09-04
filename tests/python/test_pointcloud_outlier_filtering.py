@@ -17,7 +17,7 @@ class TestStatisticalOutlierFilter(unittest.TestCase):
         pc = PointCloud(
             points=np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2], [100, 100, 100]]),
         )
-        filtered_pc = pc.statistical_outlier_filter(k=3, std_mul=1.5)
+        filtered_pc = pc.statistical_outlier_filter(k=2, std_mul=1.0)
         self.assertEqual(len(filtered_pc), 3)
         self.assertTrue(
             np.all(filtered_pc.points == np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]]))

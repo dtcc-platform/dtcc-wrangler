@@ -59,7 +59,7 @@ namespace DTCC_BUILDER
 
             double T = mean + outlierMargin * std;
 
-            info("T: " + str(T));
+            // info("T: " + str(T));
             for (size_t i = 0; i < u_dist_i.size(); i++)
             {
                 if (u_dist_i[i] > T)
