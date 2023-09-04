@@ -85,3 +85,21 @@ class TestModifyCity(unittest.TestCase):
 
         self.assertEqual(merged_city.buildings[0].ground_level, 1)
         self.assertEqual(merged_city.buildings[-1].ground_level, 2)
+
+
+class TestCalculateBounds(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        building_shp_file = (
+            Path(__file__).parent / ".." / "data" / "MinimalCase" / "PropertyMap.shp"
+        ).resolve()
+
+        cls.city = io.load_footprints(building_shp_file, "uuid")
+
+    def test_calculate_bounds(self):
+        self.city.calculate_bounds()
+        city_bounds = self.city.bounds.tuple
+        self.assertAlmostEqual(city_bounds[0], -5.142, places=3)
+        self.assertAlmostEqual(city_bounds[1], -15.975, places=3)
+        self.assertAlmostEqual(city_bounds[2], 12.99, places=3)
+        self.assertAlmostEqual(city_bounds[3], -1.098, places=3)

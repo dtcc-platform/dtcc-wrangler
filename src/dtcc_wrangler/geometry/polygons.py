@@ -71,7 +71,7 @@ def merge_polygons(p1, p2, tol):
     return mp
 
 
-def simplify_polygon(p, tol):
+def simplify_polygon(p: Polygon, tol):
     sp = p.simplify(tol)
     if sp.geom_type != "Polygon":
         sp = p.simplify(tol, preserve_topology=True)
