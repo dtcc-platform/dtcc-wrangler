@@ -103,3 +103,11 @@ class TestCalculateBounds(unittest.TestCase):
         self.assertAlmostEqual(city_bounds[1], -15.975, places=3)
         self.assertAlmostEqual(city_bounds[2], 12.99, places=3)
         self.assertAlmostEqual(city_bounds[3], -1.098, places=3)
+
+    def test_calculate_bounds_with_buffer(self):
+        self.city.calculate_bounds(buffer=1)
+        city_bounds = self.city.bounds.tuple
+        self.assertAlmostEqual(city_bounds[0], -6.142, places=3)
+        self.assertAlmostEqual(city_bounds[1], -16.975, places=3)
+        self.assertAlmostEqual(city_bounds[2], 13.99, places=3)
+        self.assertAlmostEqual(city_bounds[3], -0.098, places=3)

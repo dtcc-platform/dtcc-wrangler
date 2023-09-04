@@ -117,12 +117,13 @@ def merge_buildings(
 
 
 @register_model_method
-def calculate_bounds(city: City) -> City:
+def calculate_bounds(city: City, buffer: float = 0) -> City:
     """
     Calculate the bounds of a `City` object.
 
     Args:
         city (City): The `City` object to calculate the bounds of.
+        buffer (float): The buffer to add to the bounds (default 0).
 
     Returns:
         City: A new `City` object with the bounds calculated.
@@ -130,4 +131,6 @@ def calculate_bounds(city: City) -> City:
     footprints = [b.footprint for b in city.buildings]
     bounds = MultiPolygon(footprints).bounds
     city.bounds = Bounds(bounds[0], bounds[1], bounds[2], bounds[3])
+    if buffer != 0:
+        city.bounds.buffer(buffer)
     return city
