@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-version = "0.7.3"
+version = "0.7.8"
 name = "dtcc-wrangler"
 description = "DTCC Wrangler"
 readme = "README.md"
@@ -25,8 +25,10 @@ dependencies = [
   "rasterio >= 1.2.0, < 2.0.0",
   "rasterstats >= 0.19.0, < 1.0.0",
   "pypoints2grid",
-  "dtcc-model@git+https://github.com/dtcc-platform/dtcc-model.git@develop",
-  "dtcc-io@git+https://github.com/dtcc-platform/dtcc-io.git@develop",
+  "dtcc-model >= 0.7.5",
+  "dtcc-io >= 0.7.5",
+  #"dtcc-model@git+https://github.com/dtcc-platform/dtcc-model.git@develop",
+  #"dtcc-io@git+https://github.com/dtcc-platform/dtcc-io.git@develop",
 ]
 
 [project.optional-dependencies]
