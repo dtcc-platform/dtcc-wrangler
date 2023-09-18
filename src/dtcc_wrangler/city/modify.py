@@ -6,11 +6,12 @@ from dtcc_wrangler.geometry.polygons import (
 )
 
 from dtcc_wrangler.register import register_model_method
-from dtcc_model import City, Building
+from dtcc_model import City, Building, Bounds
 from statistics import mean
 import dataclasses
 from copy import deepcopy
 from collections import defaultdict
+from shapely.geometry import MultiPolygon
 
 
 @register_model_method
@@ -113,3 +114,23 @@ def merge_buildings(
     if simplify:
         merged_city = simplify_buildings(merged_city, max_distance / 2)
     return merged_city
+
+
+@register_model_method
+def calculate_bounds(city: City, buffer: float = 0) -> City:
+    """
+    Calculate the bounds of a `City` object.
+
+    Args:
+        city (City): The `City` object to calculate the bounds of.
+        buffer (float): The buffer to add to the bounds (default 0).
+
+    Returns:
+        City: A new `City` object with the bounds calculated.
+    """
+    footprints = [b.footprint for b in city.buildings]
+    bounds = MultiPolygon(footprints).bounds
+    city.bounds = Bounds(bounds[0], bounds[1], bounds[2], bounds[3])
+    if buffer != 0:
+        city.bounds.buffer(buffer)
+    return city
