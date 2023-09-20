@@ -12,6 +12,7 @@ import dataclasses
 from copy import deepcopy
 from collections import defaultdict
 from shapely.geometry import MultiPolygon
+from logging import info, warning, error
 
 
 @register_model_method
@@ -57,7 +58,11 @@ def remove_small_buildings(city: City, min_area=10) -> City:
 
 @register_model_method
 def merge_buildings(
-    city: City, max_distance=0.15, simplify=True, properties_merge_strategy="list"
+    city: City,
+    max_distance=0.15,
+    simplify=True,
+    properties_merge_strategy="list",
+    height_merge_strategy="mean",
 ) -> City:
     """
     Merge buildings that are close together.
@@ -70,6 +75,11 @@ def merge_buildings(
         Whether to simplify the merged buildings (default True).
     properties_merge_strategy : str, optional
         The strategy for merging properties. Options are 'list' and 'sample'. 'list' will create a list of all properties for the merged building. 'sample' will pick a property value from a random building (default "list").
+    height_merge_strategy : str, optional
+        The strategy for merging heights. Options are 'mean', 'area_weighted' and 'max' .
+        'mean' will take the mean height of the merged buildings.
+        'area_weighted' will take the area weighted mean height of the merged buildings.
+        'max' will take the maximum height of the merged buildings (default "mean").
 
     Returns
     -------
@@ -86,7 +96,23 @@ def merge_buildings(
 
         b = dataclasses.replace(city.buildings[merged_polygons_idx[idx][0]])
         b.footprint = merged_polygon
-        b.height = mean([city.buildings[i].height for i in merged_polygons_idx[idx]])
+        if height_merge_strategy == "mean":
+            b.height = mean(
+                [city.buildings[i].height for i in merged_polygons_idx[idx]]
+            )
+        elif height_merge_strategy == "area_weighted":
+            b.height = sum(
+                [
+                    city.buildings[i].height * city.buildings[i].footprint.area
+                    for i in merged_polygons_idx[idx]
+                ]
+            ) / sum(
+                [city.buildings[i].footprint.area for i in merged_polygons_idx[idx]]
+            )
+        elif height_merge_strategy == "max":
+            b.height = max([city.buildings[i].height for i in merged_polygons_idx[idx]])
+        else:
+            error(f"Unknown height merge strategy: {height_merge_strategy}")
         b.ground_level = min(
             [city.buildings[i].ground_level for i in merged_polygons_idx[idx]]
         )
