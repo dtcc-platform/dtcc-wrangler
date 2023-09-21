@@ -72,7 +72,7 @@ class TestModifyCity(unittest.TestCase):
             len(filtered_city.buildings), len(self.testcase2.buildings) - 3
         )
 
-    def test_merge_heights(self):
+    def test_merge_heights_mean(self):
         tc2 = deepcopy(self.testcase2)
         for b in tc2.buildings:
             b.height = 10
@@ -85,6 +85,26 @@ class TestModifyCity(unittest.TestCase):
 
         self.assertEqual(merged_city.buildings[0].ground_level, 1)
         self.assertEqual(merged_city.buildings[-1].ground_level, 2)
+
+    def test_merge_heights_area_weighted(self):
+        tc = deepcopy(self.testcase1)
+        for b in tc.buildings:
+            b.height = 10
+            b.ground_level = 2
+        tc.buildings[9].height = 20
+
+        merged_city = tc.merge_buildings(0.1, height_merge_strategy="area_weighted")
+        self.assertAlmostEqual(merged_city.buildings[0].height, 19.4, places=1)
+
+    def test_merge_heights_max(self):
+        tc2 = deepcopy(self.testcase2)
+        for b in tc2.buildings:
+            b.height = 10
+            b.ground_level = 2
+        tc2.buildings[0].height = 20
+        tc2.buildings[0].ground_level = 1
+        merged_city = tc2.merge_buildings(0.1, height_merge_strategy="max")
+        self.assertEqual(merged_city.buildings[0].height, 20)
 
 
 class TestCalculateBounds(unittest.TestCase):
