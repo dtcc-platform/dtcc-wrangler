@@ -24,16 +24,10 @@ dependencies = [
   "shapely >= 2.0.0, < 3.0.0",
   "rasterio >= 1.2.0, < 2.0.0",
   "rasterstats >= 0.19.0, < 1.0.0",
-<<<<<<< HEAD
-  "pypoints2grid",
-  "dtcc-model >= 0.7.17",
-  "dtcc-io >= 0.7.17",
-=======
   "pypoints2grid >= 0.1.9,  < 0.2.0",
   "dtcc-model >= 0.7.21",
   "dtcc-io >= 0.7.21",
   "dtcc-common >= 0.7.21",
->>>>>>> develop
 ]
 
 [project.optional-dependencies]
