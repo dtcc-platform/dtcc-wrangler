@@ -63,7 +63,7 @@ def merge_polygons(p1, p2, tol):
     #     info("Failed to merge polygons. Trying snapping")
     #     mp = merge_polygons_snapping(p1, p2, tol)
     if mp.geom_type != "Polygon":
-        info("Failed to merge polygons. Trying buffering")
+        # info("Failed to merge polygons. Trying buffering")
         mp = merge_polygons_buffering(p1, p2, tol)
         if mp is None:
             info("Failed to merge polygons. Falling back to convex hull")
@@ -81,11 +81,16 @@ def simplify_polygon(p: Polygon, tol):
 
 
 def remove_slivers(p: Polygon, tol):
-    p = p.buffer(tol, 1, join_style=JOIN_STYLE.mitre).buffer(
+    # info("Removing slivers")
+    b_p = p.buffer(tol, 1, join_style=JOIN_STYLE.mitre).buffer(
         -tol, 1, join_style=JOIN_STYLE.mitre
     )
-    p = shapely.make_valid(p)
-    return p
+    b_p = shapely.make_valid(b_p)
+    if b_p.geom_type == "Polygon":
+        return b_p
+    else:
+        b_p = merge_multipolygon(b_p, tol)
+    return b_p
 
 
 def remove_holes(p: Polygon):
