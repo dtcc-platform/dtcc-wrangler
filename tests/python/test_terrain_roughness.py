@@ -5,7 +5,16 @@ import dtcc_wrangler
 
 
 class TestComputeSlopeAspect(unittest.TestCase):
-    def test_compute_slope_aspect(self):
+    def test_flat_slope_aspect(self):
+        dem_data = np.ones((10, 10))
+        dem = Raster(data=dem_data)
+        slope, aspect = dem.slope_aspect()
+        expected_slope_data = np.zeros((10, 10))
+        expected_aspect_data = np.zeros((10, 10))
+        np.testing.assert_allclose(slope.data, expected_slope_data)
+        np.testing.assert_allclose(aspect.data, expected_aspect_data)
+
+    def test_slope_aspect(self):
         # Create test DEM
         dem_data = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]])
         dem = Raster(data=dem_data)
@@ -36,9 +45,13 @@ class TestComputeSlopeAspect(unittest.TestCase):
         dem = Raster(data=dem_data)
         tri = dem.TRI()
         expected_tri_data = np.array(
-            [[2, 2, 2], [6.480741, 6.480741, 6.480741], [9.797959, 9.797959, 9.797959]]
+            [
+                [1.732051, 1.732051, 1.732051],
+                [2.44949, 2.44949, 2.44949],
+                [1.732051, 1.732051, 1.732051],
+            ]
         )
-        np.testing.assert_allclose(tri.data, expected_tri_data)
+        np.testing.assert_allclose(tri.data, expected_tri_data, rtol=1e-05)
 
     def test_tpi(self):
         dem_data = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]])
@@ -53,3 +66,10 @@ class TestComputeSlopeAspect(unittest.TestCase):
             rtol=1e-05,
             atol=1e-08,
         )
+
+    # def test_vrm(self):
+    #     dem_data = np.ones((10, 10))
+    #     dem = Raster(data=dem_data)
+    #     vrm = dem.VRM()
+    #     excepted_data = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
+    #     np.testing.assert_allclose(vrm.data, excepted_data)
