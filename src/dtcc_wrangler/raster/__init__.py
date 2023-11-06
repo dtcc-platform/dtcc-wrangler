@@ -1,1 +1,1 @@
-from . import interpolation, stats, burn
+from . import interpolation, stats, burn, analyse

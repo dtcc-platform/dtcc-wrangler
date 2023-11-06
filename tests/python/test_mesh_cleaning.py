@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from dtcc_model.meshes import Mesh
+from dtcc_model.geometry.mesh import Mesh
 import dtcc_wrangler
 
 

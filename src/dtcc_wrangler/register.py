@@ -1,5 +1,5 @@
 from inspect import signature
-from dtcc_model.model import DTCCModel
+from dtcc_model.model import Model
 
 
 def register_model_method(fn):
@@ -8,9 +8,9 @@ def register_model_method(fn):
         raise ValueError("Model method must have at least one parameter")
     first_arg = list(params.keys())[0]
     first_type = params[first_arg].annotation
-    if not issubclass(first_type, DTCCModel):
+    if not issubclass(first_type, Model):
         raise ValueError(
-            f"First parameter must be a DTCCModel. Did you forget to add a type hint?"
+            f"First parameter must be a DTCC Model. Did you forget to add a type hint?"
         )
     fn._dtcc_model_method = True
     first_type.add_methods(fn, fn.__name__)

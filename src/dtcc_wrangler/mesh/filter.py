@@ -1,26 +1,49 @@
-from dtcc_model.meshes import Mesh
+from dtcc_model.geometry.mesh import Mesh
 import numpy as np
 from logging import info, warning, error
 from dtcc_wrangler.register import register_model_method
 
 
 @register_model_method
-def get_markers(mesh: Mesh, markers: list, invert_filter=False) -> Mesh:
+def get_markers(
+    mesh: Mesh, markers: list = [], threshold: int = None, invert_filter=False
+) -> Mesh:
     """
     Get a mesh with only the markers specified.
+
+    Args:
+        mesh (Mesh): The input mesh.
+        markers (list of int): The markers to keep (default []).
+        threshold (int): return mesh with markers great or equal to this value (default None).
+        invert_filter (bool): Whether to invert the filter (default False).
+
+    Returns:
+        Mesh: The filtered mesh.
     """
+
     if len(mesh.markers) != len(mesh.faces):
         error("Mesh does not have a marker for every face. Nothing is filtered.")
         return None
     return_mesh = mesh.copy()
-    markets = set(markers)
     marker_indices = []
     for idx, marker in enumerate(mesh.markers):
         if (marker in markers) and (not invert_filter):
             marker_indices.append(idx)
         elif (marker not in markers) and invert_filter:
             marker_indices.append(idx)
+        if threshold is not None:
+            if (marker >= threshold) and (not invert_filter):
+                marker_indices.append(idx)
+            elif (marker < threshold) and invert_filter:
+                marker_indices.append(idx)
     return_mesh.faces = mesh.faces[marker_indices]
+    return_mesh.markers = mesh.markers[marker_indices]
+    if len(mesh.normals) == len(mesh.faces):
+        return_mesh.normals = mesh.normals[marker_indices]
+    if len(mesh.face_colors) == len(mesh.faces):
+        return_mesh.face_colors = mesh.face_colors[marker_indices]
+
+    return return_mesh
 
 
 def _duplicate_elemente_indices(arr):
