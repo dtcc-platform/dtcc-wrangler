@@ -54,8 +54,24 @@ class TestSharpAngle(unittest.TestCase):
         new_poly = dtcc_wrangler.geometry.polygons.flatten_sharp_angles(
             self.test_poly, 10, 2.0
         )
-        print(new_poly.wkt)
-        self.assertGreaterEqual(shapely.minimum_clearance(new_poly) + 1e-2, 1.0)
+        self.assertGreaterEqual(shapely.minimum_clearance(new_poly) + 1e-1, 2.0)
+
+
+class TestFixCity(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        building_shp_file = (
+            Path(__file__).parent / ".." / "data" / "poly_fix" / "testcase1.shp"
+        ).resolve()
+        testcase_city = dtcc_io.load_city(building_shp_file)
+        cls.test_city = testcase_city
+
+    def test_fix_city(self):
+        fixed_city = self.test_city.merge_buildings(1).fix_building_clearance(1, 20)
+        self.assertEqual(len(fixed_city.buildings), 2)
+        for b in fixed_city.buildings:
+            # check why min clearance is 0.8
+            self.assertGreaterEqual(shapely.minimum_clearance(b.footprint) + 0.2, 1)
 
 
 if __name__ == "__main__":

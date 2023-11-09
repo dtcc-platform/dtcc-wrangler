@@ -227,7 +227,6 @@ def widen_gaps(fp: Polygon, tol: float) -> Polygon:
 def lengthen_edges(fp: Polygon, tol: float) -> Polygon:
     extr_verts = list(fp.exterior.coords)
     vertex_count = len(extr_verts) - 1
-    print(f"len(extr_verts) pre: {len(extr_verts)}")
     edges = [
         LineString([extr_verts[i], extr_verts[i + 1]])
         for i in range(len(extr_verts) - 1)
@@ -237,15 +236,14 @@ def lengthen_edges(fp: Polygon, tol: float) -> Polygon:
     for idx1, idx2 in combinations(range(len(edges)), 2):
         if idx1 == idx2:
             continue
-        print(idx1, idx2)
         edge1 = edges[idx1]
         edge2 = edges[idx2]
         distance = edge1.distance(edge2)
         if distance > 0 and distance < tol:
-            print(f"updating {idx1} and {idx2}")
             delta = (tol - distance) / 2
-            centroid1 = edge1.centroid
-            centroid2 = edge2.centroid
+            nps = shapely.ops.nearest_points(edge1, edge2)
+            centroid1 = nps[0]
+            centroid2 = nps[1]
             dx = centroid2.x - centroid1.x
             dy = centroid2.y - centroid1.y
             length = (dx**2 + dy**2) ** 0.5
@@ -263,12 +261,10 @@ def lengthen_edges(fp: Polygon, tol: float) -> Polygon:
             updated_verts.append(((idx2 + 1) % vertex_count, t_edge2.coords[1]))
 
     # print(f"len(extr_verts) post: {len(extr_verts)}")
-    print(updated_verts)
     updated_verts.sort(key=lambda x: x[0])
     # updated_verts = groupby(updated_verts, key=lambda x: x[0])
     # print(updated_verts)
     for idx, uv in groupby(updated_verts, key=lambda x: x[0]):
-        print(f"idx: {idx}")
         min_dist = 1e6
         base_pt = extr_verts[idx]
         for _, pt in uv:
@@ -277,7 +273,6 @@ def lengthen_edges(fp: Polygon, tol: float) -> Polygon:
                 min_dist = dist
                 extr_verts[idx] = pt
     extr_verts[-1] = extr_verts[0]
-    print(f"len(extr_verts) post: {len(extr_verts)}")
     return Polygon(extr_verts, holes=fp.interiors)
 
 
@@ -285,29 +280,28 @@ def flatten_sharp_angles(fp: Polygon, min_angle: float, tol: float) -> Polygon:
     exterior_ring = list(fp.exterior.coords)
     updated = False
     inserted_verts = []
-    print(len(exterior_ring))
     for i in range(len(exterior_ring) - 1):
-        print(i, i + 1, (i + 2) % (len(exterior_ring) - 1))
         p1 = exterior_ring[i]
         p2 = exterior_ring[i + 1]
         p3 = exterior_ring[(i + 2) % (len(exterior_ring) - 1)]
-        angle = abs(
-            math.degrees(
-                math.atan2(p3[1] - p2[1], p3[0] - p2[0])
-                - math.atan2(p1[1] - p2[1], p1[0] - p2[0])
-            )
+        angle = math.degrees(
+            math.atan2(p3[1] - p2[1], p3[0] - p2[0])
+            - math.atan2(p1[1] - p2[1], p1[0] - p2[0])
         )
-        if angle < min_angle:
+
+        if abs(angle) < min_angle:
             updated = True
             normal = (-p2[1] + p1[1], p2[0] - p1[0])
             normal_mag = math.sqrt(normal[0] ** 2 + normal[1] ** 2)
-            normal = (normal[0] / normal_mag, normal[1] / normal_mag)
+            flip = -1 if angle > 0 else 1
+
+            normal = (flip * normal[0] / normal_mag, flip * normal[1] / normal_mag)
             new_pt = (p2[0] + (normal[0] * tol), p2[1] + (normal[1] * tol))
-            inserted_verts.append((i + 1, new_pt))
+            inserted_verts.append(((i + 1) % (len(exterior_ring) - 1), new_pt))
 
     if updated:
         for ins_idx, pt in inserted_verts:
-            exterior_ring.insert(ins_idx, pt)
+            exterior_ring.insert(ins_idx + 1, pt)
         return Polygon(exterior_ring, holes=fp.interiors)
     else:
         return fp

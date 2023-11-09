@@ -3,11 +3,15 @@ from dtcc_wrangler.geometry.polygons import (
     simplify_polygon,
     remove_slivers,
     remove_holes,
+    widen_gaps,
+    lengthen_edges,
+    flatten_sharp_angles,
 )
 
 from dtcc_wrangler.register import register_model_method
 from dtcc_model import City, Building, Bounds
 from statistics import mean
+import shapely
 import dataclasses
 from copy import deepcopy
 from collections import defaultdict
@@ -137,9 +141,30 @@ def merge_buildings(
         b.properties = dict(merged_properties)
 
         merged_city.buildings.append(b)
-    if simplify:
-        merged_city = simplify_buildings(merged_city, max_distance / 2)
+
     return merged_city
+
+
+@register_model_method
+def fix_building_clearance(city: City, tol: float, min_angle: float) -> City:
+    """
+    Fix the clearance of the footprints in the building models. After running
+    each building should have a minimum_clearance of `tol` meters and a minimum
+    angle between each edge of `min_angle` degrees.
+    """
+    fixed_city = city.copy()
+    footprints = [b.footprint for b in city.buildings]
+    for idx, f in enumerate(footprints):
+        if shapely.minimum_clearance(f) < tol:
+            print("widening gaps")
+            f = widen_gaps(f, tol)
+            print(f"minimum clearance: {shapely.minimum_clearance(f)}")
+            if shapely.minimum_clearance(f) < tol:
+                print("lengthening edges")
+                f = lengthen_edges(f, tol)
+        f = flatten_sharp_angles(f, min_angle, tol)
+        fixed_city.buildings[idx].footprint = f
+    return fixed_city
 
 
 @register_model_method
