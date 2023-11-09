@@ -3,13 +3,23 @@ from typing import List, Tuple
 
 from dtcc_model import Building, City
 import shapely
-from shapely.geometry import Point, Polygon, MultiPolygon, JOIN_STYLE
+from shapely.geometry import (
+    Point,
+    Polygon,
+    MultiPolygon,
+    LineString,
+    MultiLineString,
+    JOIN_STYLE,
+)
+import math
 import shapely.ops
+import shapely.affinity
 from shapely.validation import make_valid
 import numpy as np
 from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import connected_components
 from collections import defaultdict
+from itertools import combinations, groupby
 
 from dtcc_wrangler.logging import debug, info, warning, error, critical
 
@@ -17,6 +27,17 @@ from dtcc_wrangler.logging import debug, info, warning, error, critical
 def merge_polygons_convexhull(p1, p2):
     mp = MultiPolygon([p1, p2])
     return mp.convex_hull
+
+
+def merge_polygon_hulls(p1, p2):
+    p1_hull = p1.convex_hull
+    p2_hull = p2.convex_hull
+    mp = p1.union(p2)
+    mp = make_valid(mp)
+    if mp.geom_type == "Polygon":
+        return mp
+    else:
+        return None
 
 
 def merge_polygons_buffering(p1, p2, tol):
@@ -66,14 +87,16 @@ def merge_polygons(p1, p2, tol):
         # info("Failed to merge polygons. Trying buffering")
         mp = merge_polygons_buffering(p1, p2, tol)
         if mp is None:
-            info("Failed to merge polygons. Falling back to convex hull")
-            mp = merge_polygons_convexhull(p1, p2)
+            mp = merge_polygon_hulls(p1, p2)
+            if mp is None:
+                info("Failed to merge polygons. Falling back to merging convex hull")
+                mp = merge_polygons_convexhull(p1, p2)
     return mp
 
 
 def simplify_polygon(p: Polygon, tol):
     sp = p.simplify(tol)
-    if sp.geom_type != "Polygon":
+    if not sp.is_valid or sp.geom_type != "Polygon":
         sp = p.simplify(tol, preserve_topology=True)
     if sp.geom_type != "Polygon":
         sp = p
@@ -174,3 +197,117 @@ def polygon_merger(
         merged_polygons.append(m)
 
     return merged_polygons, merge_candidates
+
+
+def widen_gaps(fp: Polygon, tol: float) -> Polygon:
+    if shapely.minimum_clearance(fp) > tol:
+        return fp
+    edges = [
+        LineString([fp.exterior.coords[i], fp.exterior.coords[i + 1]])
+        for i in range(len(fp.exterior.coords) - 1)
+    ]
+
+    for idx1, idx2 in combinations(range(len(edges)), 2):
+        if idx1 == idx2:
+            continue
+        edge1 = edges[idx1]
+        edge2 = edges[idx2]
+        distance = edge1.distance(edge2)
+        if distance > 0 and distance < tol:
+            nps = shapely.ops.nearest_points(edge1, edge2)
+            midpoint = LineString([nps[0], nps[1]]).centroid
+            mid_buffer = midpoint.buffer(tol)
+            mid_buffer_intersects = MultiLineString(edges).intersection(mid_buffer)
+            interesct_ch = mid_buffer_intersects.convex_hull
+            fp = fp.union(interesct_ch)
+            fp = fp.simplify(1e-3)
+    return fp
+
+
+def lengthen_edges(fp: Polygon, tol: float) -> Polygon:
+    extr_verts = list(fp.exterior.coords)
+    vertex_count = len(extr_verts) - 1
+    print(f"len(extr_verts) pre: {len(extr_verts)}")
+    edges = [
+        LineString([extr_verts[i], extr_verts[i + 1]])
+        for i in range(len(extr_verts) - 1)
+    ]
+
+    updated_verts = []
+    for idx1, idx2 in combinations(range(len(edges)), 2):
+        if idx1 == idx2:
+            continue
+        print(idx1, idx2)
+        edge1 = edges[idx1]
+        edge2 = edges[idx2]
+        distance = edge1.distance(edge2)
+        if distance > 0 and distance < tol:
+            print(f"updating {idx1} and {idx2}")
+            delta = (tol - distance) / 2
+            centroid1 = edge1.centroid
+            centroid2 = edge2.centroid
+            dx = centroid2.x - centroid1.x
+            dy = centroid2.y - centroid1.y
+            length = (dx**2 + dy**2) ** 0.5
+            unit_dx = dx / length
+            unit_dy = dy / length
+            t_edge1 = shapely.affinity.translate(
+                edge1, -unit_dx * distance, -unit_dy * delta
+            )
+            t_edge2 = shapely.affinity.translate(
+                edge2, unit_dx * distance, unit_dy * delta
+            )
+            updated_verts.append((idx1, t_edge1.coords[0]))
+            updated_verts.append(((idx1 + 1) % vertex_count, t_edge1.coords[1]))
+            updated_verts.append((idx2, t_edge2.coords[0]))
+            updated_verts.append(((idx2 + 1) % vertex_count, t_edge2.coords[1]))
+
+    # print(f"len(extr_verts) post: {len(extr_verts)}")
+    print(updated_verts)
+    updated_verts.sort(key=lambda x: x[0])
+    # updated_verts = groupby(updated_verts, key=lambda x: x[0])
+    # print(updated_verts)
+    for idx, uv in groupby(updated_verts, key=lambda x: x[0]):
+        print(f"idx: {idx}")
+        min_dist = 1e6
+        base_pt = extr_verts[idx]
+        for _, pt in uv:
+            dist = (pt[0] - base_pt[0]) ** 2 + (pt[1] - base_pt[1]) ** 2
+            if dist < min_dist:
+                min_dist = dist
+                extr_verts[idx] = pt
+    extr_verts[-1] = extr_verts[0]
+    print(f"len(extr_verts) post: {len(extr_verts)}")
+    return Polygon(extr_verts, holes=fp.interiors)
+
+
+def flatten_sharp_angles(fp: Polygon, min_angle: float, tol: float) -> Polygon:
+    exterior_ring = list(fp.exterior.coords)
+    updated = False
+    inserted_verts = []
+    print(len(exterior_ring))
+    for i in range(len(exterior_ring) - 1):
+        print(i, i + 1, (i + 2) % (len(exterior_ring) - 1))
+        p1 = exterior_ring[i]
+        p2 = exterior_ring[i + 1]
+        p3 = exterior_ring[(i + 2) % (len(exterior_ring) - 1)]
+        angle = abs(
+            math.degrees(
+                math.atan2(p3[1] - p2[1], p3[0] - p2[0])
+                - math.atan2(p1[1] - p2[1], p1[0] - p2[0])
+            )
+        )
+        if angle < min_angle:
+            updated = True
+            normal = (-p2[1] + p1[1], p2[0] - p1[0])
+            normal_mag = math.sqrt(normal[0] ** 2 + normal[1] ** 2)
+            normal = (normal[0] / normal_mag, normal[1] / normal_mag)
+            new_pt = (p2[0] + (normal[0] * tol), p2[1] + (normal[1] * tol))
+            inserted_verts.append((i + 1, new_pt))
+
+    if updated:
+        for ins_idx, pt in inserted_verts:
+            exterior_ring.insert(ins_idx, pt)
+        return Polygon(exterior_ring, holes=fp.interiors)
+    else:
+        return fp
