@@ -220,7 +220,7 @@ def widen_gaps(fp: Polygon, tol: float) -> Polygon:
             mid_buffer_intersects = MultiLineString(edges).intersection(mid_buffer)
             interesct_ch = mid_buffer_intersects.convex_hull
             fp = fp.union(interesct_ch)
-            fp = fp.simplify(1e-3)
+            fp = fp.simplify(1e-3, True)
     return fp
 
 

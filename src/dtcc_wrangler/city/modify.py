@@ -96,6 +96,7 @@ def merge_buildings(
 
     merged_city.buildings = []
     for idx, merged_polygon in enumerate(merged_polygons):
+        merged_polygon = merged_polygon.simplify(1e-3, True)
         merged_polygon = remove_slivers(merged_polygon, max_distance / 2)
 
         b = dataclasses.replace(city.buildings[merged_polygons_idx[idx][0]])
@@ -146,7 +147,9 @@ def merge_buildings(
 
 
 @register_model_method
-def fix_building_clearance(city: City, tol: float, min_angle: float) -> City:
+def fix_building_clearance(
+    city: City, tol: float, min_angle: float, guarentee=False
+) -> City:
     """
     Fix the clearance of the footprints in the building models. After running
     each building should have a minimum_clearance of `tol` meters and a minimum
@@ -162,7 +165,18 @@ def fix_building_clearance(city: City, tol: float, min_angle: float) -> City:
             if shapely.minimum_clearance(f) < tol:
                 print("lengthening edges")
                 f = lengthen_edges(f, tol)
-        f = flatten_sharp_angles(f, min_angle, tol)
+                if guarentee:
+                    counter = 1
+                    while shapely.minimum_clearance(f) < tol:
+                        f = lengthen_edges(f, tol)
+                        counter += 1
+                        if counter > 5:
+                            warning(
+                                f"Could not guarentee minimum clearance. Achived {shapely.minium_clearance(f)} out of {tol}"
+                            )
+                            break
+        # f = flatten_sharp_angles(f, min_angle, tol)
+        f = remove_slivers(f, tol / 2)
         fixed_city.buildings[idx].footprint = f
     return fixed_city
 
