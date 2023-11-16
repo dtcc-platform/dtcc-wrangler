@@ -2,10 +2,7 @@ from dtcc_wrangler.geometry.polygons import (
     polygon_merger,
     simplify_polygon,
     remove_slivers,
-    remove_holes,
-    widen_gaps,
-    lengthen_edges,
-    flatten_sharp_angles,
+    fix_clearance,
 )
 
 from dtcc_wrangler.register import register_model_method
@@ -15,7 +12,7 @@ import shapely
 import dataclasses
 from copy import deepcopy
 from collections import defaultdict
-from shapely.geometry import MultiPolygon
+from shapely.geometry import MultiPolygon, Polygon, JOIN_STYLE, CAP_STYLE
 from logging import info, warning, error
 
 
@@ -64,6 +61,7 @@ def remove_small_buildings(city: City, min_area=10) -> City:
 def merge_buildings(
     city: City,
     max_distance=0.15,
+    min_area=10,
     simplify=True,
     properties_merge_strategy="list",
     height_merge_strategy="mean",
@@ -75,6 +73,8 @@ def merge_buildings(
     ----------
     max_distance : float, optional
         The maximum distance in meters between buildings to consider them close enough to merge (default 0.15).
+    min_area : float, optional
+        The minimum area in square meters for a building to be kept (default 10).
     simplify : bool, optional
         Whether to simplify the merged buildings (default True).
     properties_merge_strategy : str, optional
@@ -92,7 +92,9 @@ def merge_buildings(
     """
     merged_city = deepcopy(city)
     footprints = [b.footprint for b in city.buildings]
-    merged_polygons, merged_polygons_idx = polygon_merger(footprints, max_distance)
+    merged_polygons, merged_polygons_idx = polygon_merger(
+        footprints, max_distance, min_area=min_area
+    )
 
     merged_city.buildings = []
     for idx, merged_polygon in enumerate(merged_polygons):
@@ -148,7 +150,7 @@ def merge_buildings(
 
 @register_model_method
 def fix_building_clearance(
-    city: City, tol: float, min_angle: float, guarentee=False
+    city: City, target_clearance: float, min_angle: float, accepted_tol_fraction=0.9
 ) -> City:
     """
     Fix the clearance of the footprints in the building models. After running
@@ -158,26 +160,9 @@ def fix_building_clearance(
     fixed_city = city.copy()
     footprints = [b.footprint for b in city.buildings]
     for idx, f in enumerate(footprints):
-        if shapely.minimum_clearance(f) < tol:
-            print("widening gaps")
-            f = widen_gaps(f, tol)
-            print(f"minimum clearance: {shapely.minimum_clearance(f)}")
-            if shapely.minimum_clearance(f) < tol:
-                print("lengthening edges")
-                f = lengthen_edges(f, tol)
-                if guarentee:
-                    counter = 1
-                    while shapely.minimum_clearance(f) < tol:
-                        f = lengthen_edges(f, tol)
-                        counter += 1
-                        if counter > 5:
-                            warning(
-                                f"Could not guarentee minimum clearance. Achived {shapely.minium_clearance(f)} out of {tol}"
-                            )
-                            break
-        # f = flatten_sharp_angles(f, min_angle, tol)
-        f = remove_slivers(f, tol / 2)
-        fixed_city.buildings[idx].footprint = f
+        fixed_fp = fix_clearance(f, target_clearance, accepted_tol_fraction)
+        fixed_city.buildings[idx].footprint = fixed_fp
+
     return fixed_city
 
 

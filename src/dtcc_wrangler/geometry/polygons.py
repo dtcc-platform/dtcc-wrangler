@@ -10,6 +10,7 @@ from shapely.geometry import (
     LineString,
     MultiLineString,
     JOIN_STYLE,
+    CAP_STYLE,
 )
 import math
 import shapely.ops
@@ -163,7 +164,7 @@ def find_merge_candidates(polygons: List[Polygon], tol: float) -> List[List[int]
     return polygon_indices
 
 
-def merge_list_of_polygons(mcp: List[Polygon], tolerance=1e-2) -> Polygon:
+def merge_list_of_polygons(mcp: List[Polygon], tolerance=1e-2, min_area=0) -> Polygon:
     if len(mcp) == 1:
         return mcp[0]
     else:
@@ -172,6 +173,8 @@ def merge_list_of_polygons(mcp: List[Polygon], tolerance=1e-2) -> Polygon:
         if m.geom_type == "Polygon":
             return m
         else:
+            if min_area > 0:
+                m = MultiPolygon([p for p in m.geoms if p.area > min_area])
             m = merge_multipolygon(m, tolerance)
             if m.geom_type != "Polygon":
                 warning("Failed to merge polygon list. Falling back to convex hull")
@@ -180,7 +183,7 @@ def merge_list_of_polygons(mcp: List[Polygon], tolerance=1e-2) -> Polygon:
 
 
 def polygon_merger(
-    polygons: List[Polygon], tolerance: float = 1e-2
+    polygons: List[Polygon], tolerance: float = 1e-2, min_area: float = 0
 ) -> Tuple[List[Polygon], List[List[int]]]:
     """Merge all polygons closer than _tolerance_ in a list of polygons into a list of polygons and a list of indices of merged polygons."""
     merge_candidates = find_merge_candidates(polygons, tolerance)
@@ -193,10 +196,19 @@ def polygon_merger(
 
     merged_polygons = []
     for mcp in merge_candidate_polygons:
-        m = merge_list_of_polygons(mcp, tolerance)
+        m = merge_list_of_polygons(mcp, tolerance, min_area=min_area)
         merged_polygons.append(m)
 
     return merged_polygons, merge_candidates
+
+
+def buffer_intersect_bounds(p: Polygon, tol: float, use_convex_hull=False) -> Polygon:
+    b = p.buffer(tol, 1, join_style=JOIN_STYLE.mitre, cap_style=CAP_STYLE.flat)
+    if use_convex_hull:
+        b = b.intersection(p.convex_hull)
+    else:
+        b = b.intersection(shapely.oriented_envelope(p))
+    return b
 
 
 def widen_gaps(fp: Polygon, tol: float) -> Polygon:
@@ -305,3 +317,22 @@ def flatten_sharp_angles(fp: Polygon, min_angle: float, tol: float) -> Polygon:
         return Polygon(exterior_ring, holes=fp.interiors)
     else:
         return fp
+
+
+def fix_clearance(
+    polygon: Polygon, target_clearance: float, tol: float = 0.9
+) -> Polygon:
+    min_clearance = shapely.minimum_clearance(polygon)
+    if min_clearance > target_clearance:
+        return polygon
+    polygon = remove_slivers(polygon, min_clearance / 2)
+    if shapely.minimum_clearance(polygon) > target_clearance * tol:
+        return polygon
+    polygon = widen_gaps(polygon, target_clearance)
+    if shapely.minimum_clearance(polygon) > target_clearance * tol:
+        return polygon
+    buf_amount = (target_clearance - shapely.minimum_clearance(polygon)) / 2
+    polygon = buffer_intersect_bounds(polygon, buf_amount)
+    if shapely.minimum_clearance(polygon) > target_clearance * tol:
+        return polygon
+    return shapely.oriented_envelope(polygon)

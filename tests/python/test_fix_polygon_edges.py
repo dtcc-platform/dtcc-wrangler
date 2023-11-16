@@ -67,9 +67,7 @@ class TestFixCity(unittest.TestCase):
         cls.test_city = testcase_city
 
     def test_fix_city(self):
-        fixed_city = self.test_city.merge_buildings(1).fix_building_clearance(
-            1, 20, guarentee=True
-        )
+        fixed_city = self.test_city.merge_buildings(1).fix_building_clearance(1, 20)
         self.assertEqual(len(fixed_city.buildings), 2)
         for b in fixed_city.buildings:
             self.assertGreaterEqual(shapely.minimum_clearance(b.footprint) + 1e-2, 1)
