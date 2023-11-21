@@ -125,6 +125,8 @@ def merge_multipolygon(multipolygon, tol=0.1):
     polygons = list(multipolygon.geoms)
     merged = []
     # orig_polygons = polygons.copy()
+    if len(polygons) == 0:
+        return Polygon()
     if len(polygons) == 1:
         m = polygons[0]
     elif len(polygons) == 2:
@@ -203,11 +205,11 @@ def polygon_merger(
 
 
 def buffer_intersect_bounds(p: Polygon, tol: float, use_convex_hull=False) -> Polygon:
-    b = p.buffer(tol, 1, join_style=JOIN_STYLE.mitre, cap_style=CAP_STYLE.flat)
+    b: Polygon = p.buffer(tol, 1, join_style=JOIN_STYLE.mitre, cap_style=CAP_STYLE.flat)
     if use_convex_hull:
-        b = b.intersection(p.convex_hull)
+        b = shapely.intersection(b, p.convex_hull)
     else:
-        b = b.intersection(shapely.oriented_envelope(p))
+        b = shapely.intersection(b, shapely.oriented_envelope(p))
     return b
 
 
@@ -232,7 +234,8 @@ def widen_gaps(fp: Polygon, tol: float) -> Polygon:
             mid_buffer_intersects = MultiLineString(edges).intersection(mid_buffer)
             interesct_ch = mid_buffer_intersects.convex_hull
             fp = fp.union(interesct_ch)
-            fp = fp.simplify(1e-3, True)
+    fp = remove_slivers(fp, 1e-3)
+    fp = fp.simplify(1e-3, True)
     return fp
 
 
@@ -319,20 +322,60 @@ def flatten_sharp_angles(fp: Polygon, min_angle: float, tol: float) -> Polygon:
         return fp
 
 
+def remove_short_edges(p: Polygon, min_length: float) -> Polygon:
+    extr_verts = list(p.exterior.coords)
+    vertex_count = len(extr_verts) - 1
+    edges = [
+        LineString([extr_verts[i], extr_verts[i + 1]])
+        for i in range(len(extr_verts) - 1)
+    ]
+    long_edges = [e for e in edges if e.length > min_length]
+    if len(long_edges) == len(edges):
+        return p
+    else:
+        new_verts = []
+        for e in long_edges:
+            new_verts.append(e.coords[0])
+        new_verts.append(long_edges[-1].coords[1])
+        polygon = Polygon(new_verts, holes=p.interiors)
+
+        return polygon
+
+
 def fix_clearance(
     polygon: Polygon, target_clearance: float, tol: float = 0.9
 ) -> Polygon:
+    original_polygon = Polygon(polygon.envelope, holes=polygon.interiors)
     min_clearance = shapely.minimum_clearance(polygon)
+    print(f"min_clearance: {min_clearance}")
     if min_clearance > target_clearance:
         return polygon
     polygon = remove_slivers(polygon, min_clearance / 2)
     if shapely.minimum_clearance(polygon) > target_clearance * tol:
         return polygon
-    polygon = widen_gaps(polygon, target_clearance)
+    print(f"sliver clearance: {shapely.minimum_clearance(polygon)}")
+    wg_polygon = widen_gaps(polygon, target_clearance)
+    print(f"winden gap clearance: {shapely.minimum_clearance(wg_polygon)}")
+
+    # widen_gaps isn't always an improvement
+    if shapely.minimum_clearance(wg_polygon) > shapely.minimum_clearance(polygon):
+        polygon = wg_polygon
     if shapely.minimum_clearance(polygon) > target_clearance * tol:
         return polygon
-    buf_amount = (target_clearance - shapely.minimum_clearance(polygon)) / 2
-    polygon = buffer_intersect_bounds(polygon, buf_amount)
-    if shapely.minimum_clearance(polygon) > target_clearance * tol:
-        return polygon
-    return shapely.oriented_envelope(polygon)
+
+    rs_polygon = remove_short_edges(polygon, target_clearance)
+    print(f"remove short edges clearance: {shapely.minimum_clearance(polygon)}")
+    if shapely.minimum_clearance(rs_polygon) > target_clearance * tol:
+        return rs_polygon
+    if shapely.minimum_clearance(rs_polygon) > shapely.minimum_clearance(polygon):
+        polygon = rs_polygon
+
+    for i in range(2):
+        buf_amount = (target_clearance - shapely.minimum_clearance(polygon)) / 2
+        polygon = buffer_intersect_bounds(polygon, buf_amount)
+        polygon = remove_slivers(polygon, buf_amount / 4)
+        print(f"buffer clearance: {shapely.minimum_clearance(polygon)}")
+        if shapely.minimum_clearance(polygon) > target_clearance * tol:
+            return polygon
+    polygon = shapely.minimum_rotated_rectangle(original_polygon)
+    return polygon
