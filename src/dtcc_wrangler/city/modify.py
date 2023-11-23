@@ -100,7 +100,8 @@ def merge_buildings(
     for idx, merged_polygon in enumerate(merged_polygons):
         merged_polygon = merged_polygon.simplify(1e-3, True)
         merged_polygon = remove_slivers(merged_polygon, max_distance / 2)
-
+        if merged_polygon.area < min_area:
+            continue
         b = dataclasses.replace(city.buildings[merged_polygons_idx[idx][0]])
         b.footprint = merged_polygon
         if height_merge_strategy == "mean":

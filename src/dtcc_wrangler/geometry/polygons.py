@@ -220,7 +220,6 @@ def widen_gaps(fp: Polygon, tol: float) -> Polygon:
         LineString([fp.exterior.coords[i], fp.exterior.coords[i + 1]])
         for i in range(len(fp.exterior.coords) - 1)
     ]
-
     for idx1, idx2 in combinations(range(len(edges)), 2):
         if idx1 == idx2:
             continue
@@ -233,7 +232,10 @@ def widen_gaps(fp: Polygon, tol: float) -> Polygon:
             mid_buffer = midpoint.buffer(tol)
             mid_buffer_intersects = MultiLineString(edges).intersection(mid_buffer)
             interesct_ch = mid_buffer_intersects.convex_hull
-            fp = fp.union(interesct_ch)
+            if interesct_ch.is_valid and interesct_ch.geom_type == "Polygon":
+                fp_union = fp.union(interesct_ch)
+                if fp_union.is_valid and fp_union.geom_type == "Polygon":
+                    fp = fp_union
     fp = remove_slivers(fp, 1e-3)
     fp = fp.simplify(1e-3, True)
     return fp
@@ -332,6 +334,8 @@ def remove_short_edges(p: Polygon, min_length: float) -> Polygon:
     long_edges = [e for e in edges if e.length > min_length]
     if len(long_edges) == len(edges):
         return p
+    if len(long_edges) < 3:
+        return p
     else:
         new_verts = []
         for e in long_edges:
@@ -345,37 +349,41 @@ def remove_short_edges(p: Polygon, min_length: float) -> Polygon:
 def fix_clearance(
     polygon: Polygon, target_clearance: float, tol: float = 0.9
 ) -> Polygon:
-    original_polygon = Polygon(polygon.envelope, holes=polygon.interiors)
+    original_polygon = Polygon(polygon.exterior, holes=polygon.interiors)
     min_clearance = shapely.minimum_clearance(polygon)
-    print(f"min_clearance: {min_clearance}")
+    # print(f"min_clearance: {min_clearance}")
     if min_clearance > target_clearance:
         return polygon
     polygon = remove_slivers(polygon, min_clearance / 2)
     if shapely.minimum_clearance(polygon) > target_clearance * tol:
         return polygon
-    print(f"sliver clearance: {shapely.minimum_clearance(polygon)}")
+    # print(f"sliver clearance: {shapely.minimum_clearance(polygon)}")
     wg_polygon = widen_gaps(polygon, target_clearance)
-    print(f"winden gap clearance: {shapely.minimum_clearance(wg_polygon)}")
+    # print(f"winden gap clearance: {shapely.minimum_clearance(wg_polygon)}")
 
     # widen_gaps isn't always an improvement
-    if shapely.minimum_clearance(wg_polygon) > shapely.minimum_clearance(polygon):
+    if wg_polygon.geom_type != "Polygon" or shapely.minimum_clearance(
+        wg_polygon
+    ) > shapely.minimum_clearance(polygon):
         polygon = wg_polygon
     if shapely.minimum_clearance(polygon) > target_clearance * tol:
         return polygon
 
     rs_polygon = remove_short_edges(polygon, target_clearance)
-    print(f"remove short edges clearance: {shapely.minimum_clearance(polygon)}")
+    # print(f"remove short edges clearance: {shapely.minimum_clearance(polygon)}")
     if shapely.minimum_clearance(rs_polygon) > target_clearance * tol:
         return rs_polygon
     if shapely.minimum_clearance(rs_polygon) > shapely.minimum_clearance(polygon):
         polygon = rs_polygon
 
-    for i in range(2):
+    for i in range(4):
         buf_amount = (target_clearance - shapely.minimum_clearance(polygon)) / 2
-        polygon = buffer_intersect_bounds(polygon, buf_amount)
+        polygon = buffer_intersect_bounds(polygon, buf_amount, True)
+        polygon = polygon.simplify(buf_amount / 4, True)
         polygon = remove_slivers(polygon, buf_amount / 4)
-        print(f"buffer clearance: {shapely.minimum_clearance(polygon)}")
+        polygon = remove_short_edges(polygon, target_clearance)
+        # print(f"buffer clearance: {shapely.minimum_clearance(polygon)}")
         if shapely.minimum_clearance(polygon) > target_clearance * tol:
             return polygon
-    polygon = shapely.minimum_rotated_rectangle(original_polygon)
+    polygon = shapely.convex_hull(original_polygon)
     return polygon
