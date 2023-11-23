@@ -166,6 +166,43 @@ def find_merge_candidates(polygons: List[Polygon], tol: float) -> List[List[int]
     return polygon_indices
 
 
+def clean_merge_candidates(
+    polygons: List[Polygon],
+    merge_candidates: List[List[int]],
+    tol: float,
+    min_area: float,
+) -> List[List[int]]:
+    """Sometimes after you have removed small isolated polygons, you end up with
+    polygons that are no longer close enough to be merged. This attempts to correct
+    for that by splitting the merge candidates into smaller isolated merge candidates.
+    """
+    removals = defaultdict(list)
+    for i, idxs in enumerate(merge_candidates):
+        for idx in idxs:
+            if polygons[idx].area < min_area:
+                small_poly = polygons[idx]
+                for isect in idxs:
+                    if isect != idx:
+                        if small_poly.intersects(polygons[isect]):
+                            break
+                else:
+                    removals[i].append(idx)
+    for i, idxs in removals.items():
+        idxs.sort()
+        for idx in idxs[::-1]:
+            merge_candidates[i].remove(idx)
+        if len(merge_candidates[i]) < 3:
+            continue
+        poly_candidates = [polygons[idx] for idx in merge_candidates[i]]
+        split_merge_candidates = find_merge_candidates(poly_candidates, tol)
+        if len(split_merge_candidates) > 1:
+            for mc in split_merge_candidates:
+                merge_candidates.append([merge_candidates[i][idx] for idx in mc])
+            merge_candidates[i] = []
+    merge_candidates = [mc for mc in merge_candidates if len(mc) > 0]
+    return merge_candidates
+
+
 def merge_list_of_polygons(mcp: List[Polygon], tolerance=1e-2, min_area=0) -> Polygon:
     if len(mcp) == 1:
         return mcp[0]
@@ -189,9 +226,13 @@ def polygon_merger(
 ) -> Tuple[List[Polygon], List[List[int]]]:
     """Merge all polygons closer than _tolerance_ in a list of polygons into a list of polygons and a list of indices of merged polygons."""
     merge_candidates = find_merge_candidates(polygons, tolerance)
+    merge_candidates = clean_merge_candidates(
+        polygons, merge_candidates, tolerance, min_area
+    )
     if len(merge_candidates) == len(polygons):
         # No polygons withon tolerance of each other
         return polygons, merge_candidates
+
     merge_candidate_polygons = []
     for mc in merge_candidates:
         merge_candidate_polygons.append([polygons[idx] for idx in mc])
