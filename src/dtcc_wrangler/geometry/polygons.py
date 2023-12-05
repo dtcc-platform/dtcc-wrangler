@@ -210,6 +210,7 @@ def merge_list_of_polygons(mcp: List[Polygon], tolerance=1e-2, min_area=0) -> Po
         m = shapely.ops.unary_union(mcp)
         m = shapely.make_valid(m)
         if m.geom_type == "Polygon":
+            m = m.simplify(tolerance / 4, True)
             return m
         else:
             if min_area > 0:
@@ -218,6 +219,8 @@ def merge_list_of_polygons(mcp: List[Polygon], tolerance=1e-2, min_area=0) -> Po
             if m.geom_type != "Polygon":
                 warning("Failed to merge polygon list. Falling back to convex hull")
                 m = m.convex_hull
+            else:
+                m = m.simplify(tolerance / 4, True)
             return m
 
 

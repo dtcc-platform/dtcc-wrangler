@@ -163,6 +163,7 @@ def fix_building_clearance(
     for idx, f in enumerate(footprints):
         fixed_fp = fix_clearance(f, target_clearance, accepted_tol_fraction)
         fixed_city.buildings[idx].footprint = fixed_fp
+    fixed_city = fixed_city.merge_buildings(0, 0, height_merge_strategy="area_weighted")
 
     return fixed_city
 
