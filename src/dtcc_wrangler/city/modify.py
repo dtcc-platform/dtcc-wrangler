@@ -189,7 +189,8 @@ def calculate_bounds(city: City, buffer: float = 0) -> City:
         city.bounds.buffer(buffer)
     return city
 
-def get_building_footprint(building: NewBuilding, geom_type:GeometryType = None):
+@register_model_method
+def get_footprint(building: NewBuilding, geom_type:GeometryType = None):
 
     if geom_type is None:
         if building.geometry.lod0:
@@ -205,6 +206,14 @@ def get_building_footprint(building: NewBuilding, geom_type:GeometryType = None)
         else:
             raise ValueError("No geometry found")
 
-        geom = building.geometry[geom_type]
-        if len(geom) == 0:
-            raise ValueError("No geometry found")
+    if geom_type == GeometryType.MESH:
+        raise ValueError("Mesh geometry not supported yet")
+
+    geom = building.flatten_geometry(geom_type)
+    if geom is None:
+        return None
+    return geom.flatten()
+
+
+
+
