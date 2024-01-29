@@ -1,9 +1,12 @@
 build/
+cmake-build-debug/
+cmake-build-release/
+
 scratch/
 
 .idea/
 .vscode/
-cmake-build-debug/
+
 __pycache__
 *.pyc
 .DS_Store

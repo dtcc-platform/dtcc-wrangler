@@ -210,7 +210,8 @@ def merge_list_of_polygons(mcp: List[Polygon], tolerance=1e-2, min_area=0) -> Po
         m = shapely.ops.unary_union(mcp)
         m = shapely.make_valid(m)
         if m.geom_type == "Polygon":
-            m = m.simplify(tolerance / 4, True)
+            if tolerance > 0:
+                m = m.simplify(tolerance / 4, True)
             return m
         else:
             if min_area > 0:

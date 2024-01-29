@@ -7,6 +7,8 @@ from dtcc_wrangler.geometry.polygons import (
 
 from dtcc_wrangler.register import register_model_method
 from dtcc_model import City, Building, Bounds
+from dtcc_model.object.building import NewBuilding
+from dtcc_model.object.object import GeometryType
 from statistics import mean
 import shapely
 import dataclasses
@@ -186,3 +188,23 @@ def calculate_bounds(city: City, buffer: float = 0) -> City:
     if buffer != 0:
         city.bounds.buffer(buffer)
     return city
+
+def get_building_footprint(building: NewBuilding, geom_type:GeometryType = None):
+
+    if geom_type is None:
+        if building.geometry.lod0:
+            geom_type = GeometryType.LOD0
+        elif building.geometry.lod1:
+            geom_type = GeometryType.LOD1
+        elif building.geometry.lod2:
+            geom_type = GeometryType.LOD2
+        elif building.geometry.lod3:
+            geom_type = GeometryType.LOD3
+        elif building.geometry.mesh:
+            geom_type = GeometryType.MESH
+        else:
+            raise ValueError("No geometry found")
+
+        geom = building.geometry[geom_type]
+        if len(geom) == 0:
+            raise ValueError("No geometry found")
