@@ -5,7 +5,7 @@ import dtcc_wrangler
 import shapely
 
 
-class TestWidenGap(unittest.TestCase):
+class TestFixClearance(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         building_shp_file = (
@@ -15,11 +15,11 @@ class TestWidenGap(unittest.TestCase):
         cls.test_poly = testcase_city.buildings[0].footprint
 
     def test_widen_gap1(self):
-        new_poly = dtcc_wrangler.geometry.polygons.widen_gaps(self.test_poly, 1.0)
+        new_poly = dtcc_wrangler.geometry.polygons.fix_clearance(self.test_poly, 1.0)
         self.assertGreaterEqual(shapely.minimum_clearance(new_poly), 1.0)
 
     def test_widen_gap2(self):
-        new_poly = dtcc_wrangler.geometry.polygons.widen_gaps(self.test_poly, 2.0)
+        new_poly = dtcc_wrangler.geometry.polygons.fix_clearance(self.test_poly, 2.0)
         self.assertGreaterEqual(shapely.minimum_clearance(new_poly), 2.0)
 
 

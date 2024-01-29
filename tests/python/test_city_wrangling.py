@@ -55,14 +55,14 @@ class TestModifyCity(unittest.TestCase):
         self.assertEqual(len(merged_city.buildings), len(self.city.buildings))
 
     def test_merge_case1(self):
-        merged_city = self.testcase1.merge_buildings(0.1)
+        merged_city = self.testcase1.merge_buildings(0.1, min_area=5)
         self.assertEqual(len(merged_city.buildings), 1)
 
     def test_merge_case2(self):
-        merged_city = self.testcase2.merge_buildings(0.1)
+        merged_city = self.testcase2.merge_buildings(0.1,min_area=5)
         self.assertEqual(len(merged_city.buildings), 3)
 
-        merged_city = self.testcase2.merge_buildings(1.0)
+        merged_city = self.testcase2.merge_buildings(1.0,min_area=5)
         self.assertEqual(len(merged_city.buildings), 2)
 
     def test_remove_small_buildings(self):
