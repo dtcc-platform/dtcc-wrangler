@@ -1,20 +1,26 @@
-from dtcc_model.geometry.surface import Surface, MultiSurface
+from dtcc_model.geometry import Surface, Mesh
 from dtcc_wrangler.register import register_model_method
-from dtcc_wrangler.geometry.polygons import merge_list_of_polygons
-from shapely.geometry import Polygon, MultiPolygon
-
+import numpy as np
 @register_model_method
-def flatten(ms: MultiSurface) -> Polygon:
-    """Flatten a MultiSurface to a single 2D Polygon.
+def triangulate(s: Surface) -> Mesh:
+    """Triangulate a Surface.
 
     Args:
-        ms (MultiSurface): The MultiSurface to flatten.
+        s (Surface): The Surface to triangulate.
 
     Returns:
-        Polygon: The flattened Polygon.
+        Mesh: a triangular Mesh representation of the Surface.
     """
-    polygons = [Polygon(s.vertices[:, :2]).buffer(0) for s in ms.surfaces]
-    polygons = [p for p in polygons if not p.is_empty and p.area > 1e-2]
-    merged = merge_list_of_polygons(polygons)
+    m = Mesh()
+    if len(s.vertices) < 3:
+        return m
+    m.vertices = s.vertices.flatten()
+    if len(s.vertices) == 3:
+        m.faces = np.array([[0, 1, 2]])
+    if len(s.vertices) == 4:
+        m.faces = np.array([[0, 1, 2], [0, 2, 3]])
+    if len(s.vertices) > 4:
+        #TODO: implement triangulation
+        pass
+    return m
 
-    return merged
