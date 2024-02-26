@@ -9,7 +9,7 @@ Highlights:
 * Uses `scikit_build_core` as build backend
 * C++ extensions built via `CMake` and `CMakeLists.txt`
 
-This project is part the
+This project is part of the
 [Digital Twin Platform (DTCC Platform)](https://github.com/dtcc-platform/)
 developed at the
 [Digital Twin Cities Centre](https://dtcc.chalmers.se/)
